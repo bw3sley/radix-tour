@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  --color-mist: #eef1f4;
+  --color-ink: #0f1b26;
+  --color-muted: #5b6b79;
+  --color-line: #d8dee4;
+  --color-oven: #0e7c66;
+  --color-amber: #ffb84d;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-mist);
+}
+
+/* The spotlight glides to the next target, and the card text settles in on each step. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-tour-cutout] {
+    transition:
+      x 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      y 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      width 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      height 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  [data-tour-body] {
+    animation: tour-body-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @keyframes tour-body-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
