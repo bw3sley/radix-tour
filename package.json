@@ -68,6 +68,18 @@
     "vitest": "^5.0.3"
   },
   "author": "Wesley Júnior",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bw3sley/radix-tour.git"
+  },
+  "homepage": "https://github.com/bw3sley/radix-tour#readme",
+  "bugs": {
+    "url": "https://github.com/bw3sley/radix-tour/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "keywords": [
     "react",
     "tour",

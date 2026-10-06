@@ -56,10 +56,11 @@ src/
   hooks/
     use-target.ts     # resolve a selector to an element, waiting for it to mount
     use-rect.ts       # track an element's viewport rect
-docs/
-  tour.gif            # README demo, recorded from the Default story
-scripts/
-  record-demo.mjs     # re-records docs/tour.gif (needs Storybook, puppeteer-core, ffmpeg)
+.github/workflows/
+  ci.yml              # typecheck, Biome, tests and build on pull requests and main
+  release.yml         # changesets/action: opens the Version Packages PR, publishes to npm
+.changeset/           # changeset config and pending changesets
+radix-tour.gif        # README demo, recorded from the Default story
 dist/                 # build output (ESM, CJS, .d.ts)
 storybook-static/     # Storybook build output
 vite.config.ts        # library build; re-adds the "use client" banner
@@ -90,7 +91,7 @@ Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Descri
 - Stories run the tour against the fictional Crumb dashboard in `src/components/stories/crumb-app.tsx`. Its tour targets are `#route-nav`, `#search`, `#status-tabs` and `#new-order`. Keep those ids in sync with the steps in `tour.stories.tsx`.
 - Story-only styling (theme tokens, spotlight glide, card entrance) lives in `.storybook/preview.css`, not in the library.
 - Story files and `stories/` are excluded from the published type declarations in `vite.config.ts`.
-- When a change alters how the `Default` story looks or behaves, re-record `docs/tour.gif` with `node scripts/record-demo.mjs` (Storybook must be running) and commit the new file. The README embeds it.
+- When a change alters how the `Default` story looks or behaves, re-record `radix-tour.gif` (repo root) and commit the new file. The README embeds it through its `raw.githubusercontent.com` URL, so the npm page shows it too.
 
 ## Path Aliases
 
@@ -108,7 +109,7 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 - Build only what a story or test renders today. Do not add speculative parts or options.
 - New behavior needs a test. A change to what users see also needs a story.
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
-- A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. `npm run version` and `npm run release` apply and publish them; `prepublishOnly` runs typecheck, Biome, tests and the build first.
+- A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome, tests and the build first.
 - Use named exports only. No default exports, except Storybook's `export default meta`.
 - Write functions as `function fn() {}` declarations, not `const fn = () => {}`. Applies to
   components, hooks, and standalone utilities. Inline one-off callbacks

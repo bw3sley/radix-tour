@@ -4,7 +4,7 @@ An unstyled product tour library for React, built on [Radix](https://www.radix-u
 
 You build the card from composable parts and style it with your own classes. The library finds each target, positions the card beside it, handles navigation, and can draw a spotlight around it. Your app decides when the tour opens and whether a user should see it again.
 
-![A four-step product tour on a bakery order dashboard: the spotlight glides from the sidebar to the search box, the status tabs and the New order button while a dark card explains each one.](./src/assets/tour.gif)
+![A four-step product tour on a bakery order dashboard: the spotlight glides from the sidebar to the search box, the status tabs and the New order button while a dark card explains each one.](https://raw.githubusercontent.com/bw3sley/radix-tour/main/radix-tour.gif)
 
 The tour above is the `Default` story in [`src/components/tour.stories.tsx`](./src/components/tour.stories.tsx).
 
@@ -229,6 +229,4 @@ The build preserves `"use client"`, so a Server Component can import the package
 
 ## License
 
-See the [MIT License](./LICENSE.md).
-
-If radix-tour helps your project, [star the repository](https://github.com/bw3sley/radix-tour).
+License under the [MIT License](./LICENSE.md). If radix-tour helps your project, leave a feedback or ⭐ the repo.
