@@ -1,8 +1,8 @@
 # radix-tour
 
-An unstyled product tour library for React, built on [Radix](https://www.radix-ui.com/primitives) primitives and designed to be styled with Tailwind CSS.
+An unstyled product tour library for React, built on [Radix](https://www.radix-ui.com/primitives) primitives. Use it to introduce a feature, guide someone through a page, or explain a workflow one step at a time.
 
-Tours are built from small composable parts instead of a fixed tooltip. You write the card yourself, using your own components and classes, and the library handles the hard parts: finding the target, positioning the card, keeping it on screen, and cutting a spotlight around the element.
+You build the card from composable parts and style it with your own classes. The library finds each target, positions the card beside it, handles navigation, and can draw a spotlight around it. Your app decides when the tour opens and whether a user should see it again.
 
 ![A four-step product tour on a bakery order dashboard: the spotlight glides from the sidebar to the search box, the status tabs and the New order button while a dark card explains each one.](./src/assets/tour.gif)
 
@@ -17,17 +17,21 @@ The tour above is the `Default` story in [`src/components/tour.stories.tsx`](./s
 - **Per-step placement.** Each step chooses its own `side` and `align`.
 - **Independent spotlight.** The overlay is a separate part. Leave it out to point at things without dimming the page.
 - **Server Components ready.** The build keeps the `"use client"` directive.
-- **Small.** About 6 kB gzipped to npm, with React and Radix as external dependencies.
+- **Small.** The library build is about 2 kB gzipped, with React and Radix external to the bundle.
 
 ## Installation
+
+The package has not had its first npm release. After it is published, install it with:
 
 ```bash
 npm install radix-tour
 ```
 
-`react` and `react-dom` (18 or 19) are peer dependencies.
+`react` and `react-dom` (18 or 19) are peer dependencies. Tailwind is optional; the examples use it to show how consumers can style the parts.
 
 ## Quick start
+
+Give each target an element ID, define the steps in order, and control the tour's `open` state. `Tour.Content` is the card; `Tour.Spotlight` is the optional dimmed overlay.
 
 ```tsx
 import * as React from "react";
@@ -50,58 +54,89 @@ const steps: Tour.TourStep[] = [
   },
 ];
 
-export function OrdersTour() {
-  const [open, setOpen] = React.useState(true);
+function TourCard() {
+  const { isFirst, isLast } = Tour.useTour();
 
   return (
-    <Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
-      <Tour.Spotlight className="z-40 text-slate-900/55" />
-
-      <Tour.Content className="z-50 w-80 rounded-2xl bg-slate-900 p-5 text-white">
-        <Tour.Arrow className="fill-slate-900" />
-
-        <Tour.Title className="font-semibold" />
-        <Tour.Description className="mt-1 text-sm text-slate-300" />
-
-        <div className="mt-4 flex items-center justify-between">
-          <Tour.Progress className="text-xs text-slate-400" />
-
-          <div className="flex gap-2">
-            <Tour.Previous>Back</Tour.Previous>
-            <Tour.Next>Next</Tour.Next>
-          </div>
+    <Tour.Content className="z-50 w-80 rounded-2xl bg-slate-900 p-5 text-white">
+      <Tour.Arrow className="fill-slate-900" />
+      <Tour.Close aria-label="Close tour" className="float-right">Close</Tour.Close>
+      <Tour.Title className="font-semibold" />
+      <Tour.Description className="mt-1 text-sm text-slate-300" />
+      <div className="mt-4 flex items-center justify-between">
+        <Tour.Progress className="text-xs text-slate-400" />
+        <div className="flex gap-2">
+          {!isFirst && <Tour.Previous>Back</Tour.Previous>}
+          <Tour.Next>{isLast ? "Done" : "Next"}</Tour.Next>
         </div>
-      </Tour.Content>
-    </Tour.Root>
+      </div>
+    </Tour.Content>
+  );
+}
+
+export function OrdersTour() {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <input id="search" aria-label="Search orders" />
+      <button id="new-order" type="button">New order</button>
+      <button type="button" onClick={() => setOpen(true)}>Take the tour</button>
+
+      <Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
+        <Tour.Spotlight className="z-40 text-slate-900/55" />
+        <TourCard />
+      </Tour.Root>
+    </>
   );
 }
 ```
 
-The `target` of each step is a CSS selector for an element in your page. The tour is controlled: you decide when `open` is true, and `onOpenChange(false)` is called when the user finishes or closes it.
+The `target` of each step is a CSS selector for an element in your page. When the tour opens, it starts at the first step. `Next` advances; on the last step it calls `onOpenChange(false)`. `Previous` moves back, and `Close` or <kbd>Esc</kbd> closes the tour.
 
 ## Anatomy
 
+Import the namespace and compose only the parts you need:
+
 ```tsx
-<Tour.Root>
+<Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
   <Tour.Spotlight />
 
   <Tour.Content>
     <Tour.Arrow />
-    <Tour.Close />
+    <Tour.Close aria-label="Close tour">Close</Tour.Close>
     <Tour.Title />
     <Tour.Description />
     <Tour.Progress />
-    <Tour.Previous />
-    <Tour.Next />
+    <Tour.Previous>Back</Tour.Previous>
+    <Tour.Next>Next</Tour.Next>
   </Tour.Content>
 </Tour.Root>
 ```
 
-You can import the long names (`Tour`, `TourContent`, `TourSpotlight`, and so on) instead of using the namespace.
+`Root` owns the active step. `Content` positions the card beside that step's target. `Spotlight` is separate and can be omitted. You can also import the long names (`Tour`, `TourContent`, `TourSpotlight`, and so on) directly.
+
+## How steps and targets work
+
+A step has a unique `id` and a `target` CSS selector, such as `#search` or `[data-tour="search"]`. Optional `title` and `description` values appear in the matching parts; passing children to those parts overrides the values. `side` and `align` place the card for that step.
+
+If a target has not mounted, the card waits until a matching element appears. The tour scrolls a resolved target into view and tracks its position while the page scrolls or resizes. Behavior for targets that remain missing or become hidden is tracked in [issue #1](https://github.com/bw3sley/radix-tour/issues/1).
+
+The tour is controlled: your component owns `open`, and the library calls `onOpenChange(false)` when it finishes or closes. Set `open` to `true` again to restart it.
 
 ## Styling
 
-Parts render plain elements, so style them with `className`. State is exposed through attributes:
+Parts render plain elements, so style them with `className`. Use `asChild` to apply a part's behavior to your own element:
+
+```tsx
+<Tour.Next asChild>
+  <button className="rounded-md bg-blue-600 px-3 py-2 text-white">
+    Continue
+  </button>
+</Tour.Next>
+```
+
+The card and spotlight are separate layers. Give `Tour.Spotlight` a lower `z-index` than `Tour.Content`. The spotlight uses `currentColor`, so a text color with opacity controls the dimmed area. It does not block pointer events. State is exposed through attributes:
 
 | Part | Attributes |
 | --- | --- |
@@ -186,33 +221,14 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. It thr
 - Each step scrolls its target into view.
 - The card is a Radix Popover, so it is exposed to assistive technology as a dialog. The spotlight is hidden from it.
 
+Keyboard step navigation and focus return are tracked in [issue #2](https://github.com/bw3sley/radix-tour/issues/2).
+
 ## Server Components
 
-The package starts with `"use client"`, so you can import it from a Server Component file. The tour itself must still render on the client.
-
-## Development
-
-```bash
-npm install
-npm run storybook     # stories at http://localhost:6006
-npm test              # unit tests (Vitest + Testing Library)
-npm run build         # ESM + CJS + type declarations in dist/
-npm run check:fix     # lint, format and organize imports with Biome
-```
-
-To refresh the GIF at the top of this file after a visual change, start Storybook and run `node scripts/record-demo.mjs`. The header of that script lists what it needs.
-
-The repository's conventions for components, tests and code style are in [AGENTS.md](./AGENTS.md).
-
-## Roadmap
-
-Planned before 1.0:
-
-- A policy for steps whose target is missing or hidden (skip, wait or stop).
-- Arrow-key navigation and focus return when the tour closes.
-- Remembering which tours a user has seen.
-- Router adapters for steps that span pages.
+The build preserves `"use client"`, so a Server Component can import the package. Put state and event handlers, such as the `open` state in the quick start, in a Client Component.
 
 ## License
 
-[MIT](./LICENSE.md)
+See the [MIT License](./LICENSE.md).
+
+If radix-tour helps your project, [star the repository](https://github.com/bw3sley/radix-tour).
