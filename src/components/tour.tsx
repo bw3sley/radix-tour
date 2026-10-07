@@ -5,6 +5,7 @@ import type { Scope } from "@radix-ui/react-context";
 import { createContextScope } from "@radix-ui/react-context";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Primitive } from "@radix-ui/react-primitive";
+import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect } from "../hooks/use-rect";
 import { useTarget } from "../hooks/use-target";
@@ -37,6 +38,8 @@ interface TourContextValue {
   steps: TourStep[];
   index: number;
   step: TourStep;
+  isFirst: boolean;
+  isLast: boolean;
 
   /** The resolved DOM element for the current step, or null while it is still missing. */
   target: Element | null;
@@ -74,10 +77,26 @@ function Tour(props: ScopedProps<TourProps>) {
     target?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [target]);
 
+  // Layout effect: the card's autofocus runs in a passive effect, so the opener must be read first.
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const previouslyFocused = document.activeElement;
+
+    return () => {
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [open]);
+
   if (!open || !step) {
     return null;
   }
 
+  const isFirstStep = index === 0;
   const isLastStep = index === steps.length - 1;
 
   function handleNext() {
@@ -96,6 +115,8 @@ function Tour(props: ScopedProps<TourProps>) {
       steps={steps}
       index={index}
       step={step}
+      isFirst={isFirstStep}
+      isLast={isLastStep}
       target={target}
       onNext={handleNext}
       onPrevious={() => setIndex(Math.max(0, index - 1))}
@@ -120,8 +141,8 @@ function useTour(scope?: Scope) {
     steps: context.steps,
     step: context.step,
     index: context.index,
-    isFirst: context.index === 0,
-    isLast: context.index === context.steps.length - 1,
+    isFirst: context.isFirst,
+    isLast: context.isLast,
     next: context.onNext,
     previous: context.onPrevious,
     close: context.onClose,
@@ -138,6 +159,15 @@ type TourContentElement = React.ComponentRef<typeof PopoverPrimitive.Content>;
 type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>;
 interface TourContentProps extends PopoverContentProps {}
 
+function isEditable(element: HTMLElement) {
+  return (
+    element.isContentEditable ||
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement
+  );
+}
+
 /** Popover anchored to the current step's target. Renders nothing until the target exists. */
 const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
   (props: ScopedProps<TourContentProps>, forwardedRef) => {
@@ -153,6 +183,29 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       return null;
     }
 
+    function handleKeyDown(event: React.KeyboardEvent<TourContentElement>) {
+      const { key, target } = event;
+
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      // Leave arrows to inputs, selects and editors inside the card.
+      if (target instanceof HTMLElement && isEditable(target)) {
+        return;
+      }
+
+      if (key === "ArrowRight" && !context.isLast) {
+        event.preventDefault();
+        context.onNext();
+      }
+
+      if (key === "ArrowLeft" && !context.isFirst) {
+        event.preventDefault();
+        context.onPrevious();
+      }
+    }
+
     return (
       <PopoverPrimitive.Root open>
         <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
@@ -166,6 +219,7 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
             data-step={context.index}
             {...contentProps}
             ref={forwardedRef}
+            onKeyDown={composeEventHandlers(contentProps.onKeyDown, handleKeyDown)}
             onEscapeKeyDown={composeEventHandlers(contentProps.onEscapeKeyDown, context.onClose)}
             onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
               event.preventDefault(),

@@ -218,10 +218,10 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. It thr
 
 - The page stays interactive while the tour is open. Clicking outside the card does not close it.
 - <kbd>Esc</kbd> closes the tour.
+- <kbd>→</kbd> and <kbd>←</kbd> move to the next and previous step while focus is inside the card. They do nothing on the last step (→) and the first step (←), so they never close the tour; use `Tour.Next` or <kbd>Esc</kbd> for that. They are ignored with a modifier key held, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `event.preventDefault()`.
+- When the tour closes, by <kbd>Esc</kbd>, `Tour.Close` or finishing the last step, focus returns to the element that was focused when it opened (usually your "Start tour" button). If that element is no longer in the page, focus is left alone.
 - Each step scrolls its target into view.
 - The card is a Radix Popover, so it is exposed to assistive technology as a dialog. The spotlight is hidden from it.
-
-Keyboard step navigation and focus return are tracked in [issue #2](https://github.com/bw3sley/radix-tour/issues/2).
 
 ## Server Components
 

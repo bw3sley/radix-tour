@@ -110,10 +110,11 @@ interface CrumbTourProps {
   spotlight: boolean;
   padding: number;
   radius: number;
+  startOpen: boolean;
 }
 
-function CrumbTour({ tone, spotlight, padding, radius }: CrumbTourProps) {
-  const [open, setOpen] = React.useState(true);
+function CrumbTour({ tone, spotlight, padding, radius, startOpen }: CrumbTourProps) {
+  const [open, setOpen] = React.useState(startOpen);
 
   return (
     <CrumbApp
@@ -141,7 +142,7 @@ function CrumbTour({ tone, spotlight, padding, radius }: CrumbTourProps) {
 const meta = {
   title: "Tour",
   component: CrumbTour,
-  args: { tone: "dark", spotlight: true, padding: 6, radius: 10 },
+  args: { tone: "dark", spotlight: true, padding: 6, radius: 10, startOpen: true },
   argTypes: {
     tone: { control: "inline-radio", options: ["dark", "light"] },
     padding: { control: { type: "range", min: 0, max: 24, step: 2 } },
@@ -161,3 +162,6 @@ export const Light: Story = { args: { tone: "light" } };
 
 /** Skip `Tour.Spotlight` to point at targets without dimming the page. */
 export const WithoutSpotlight: Story = { args: { spotlight: false, tone: "light" } };
+
+/** Start from "Take the tour", then close with Esc or Done: focus returns to that button. Arrow keys move between steps. */
+export const StartsClosed: Story = { args: { startOpen: false } };

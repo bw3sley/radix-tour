@@ -223,3 +223,178 @@ describe("Tour", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
+
+function OpenerHarness({
+  onOpenChange,
+  onKeyDown,
+  removeOpener,
+}: {
+  onOpenChange?: (open: boolean) => void;
+  onKeyDown?: React.KeyboardEventHandler;
+  removeOpener?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [showOpener, setShowOpener] = React.useState(true);
+
+  return (
+    <>
+      <button type="button" id="first">
+        first target
+      </button>
+
+      <button type="button" id="second">
+        second target
+      </button>
+
+      {showOpener && (
+        <button type="button" onClick={() => setOpen(true)}>
+          Start tour
+        </button>
+      )}
+
+      <Tour.Root
+        steps={steps}
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && removeOpener) {
+            setShowOpener(false);
+          }
+
+          setOpen(next);
+          onOpenChange?.(next);
+        }}
+      >
+        <Tour.Content onKeyDown={onKeyDown}>
+          <Tour.Title />
+          <Tour.Previous>Back</Tour.Previous>
+          <Tour.Next>Next</Tour.Next>
+          <Tour.Close aria-label="Close tour">x</Tour.Close>
+          <input aria-label="Note" />
+        </Tour.Content>
+      </Tour.Root>
+    </>
+  );
+}
+
+async function startTour(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Start tour" }));
+  await screen.findByRole("heading", { name: "First" });
+}
+
+describe("Tour keyboard navigation", () => {
+  it("moves between steps with the arrow keys", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
+
+    await user.keyboard("{ArrowLeft}");
+
+    expect(await screen.findByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
+  it("does nothing past the first or last step", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+
+    render(<OpenerHarness onOpenChange={onOpenChange} />);
+    await startTour(user);
+
+    await user.keyboard("{ArrowLeft}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+
+    await user.keyboard("{ArrowRight}");
+    await screen.findByRole("heading", { name: "Second" });
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("heading", { name: "Second" })).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("leaves arrows to inputs inside the card", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.click(screen.getByRole("textbox", { name: "Note" }));
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
+  it("ignores arrows with a modifier key", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.keyboard("{Alt>}{ArrowRight}{/Alt}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
+  it("lets a consumer cancel navigation with preventDefault", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness onKeyDown={(event) => event.preventDefault()} />);
+    await startTour(user);
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+});
+
+describe("Tour focus return", () => {
+  it("returns focus to the opener after Escape", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Start tour" })).toHaveFocus());
+  });
+
+  it("returns focus to the opener after the close button", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Start tour" })).toHaveFocus());
+  });
+
+  it("returns focus to the opener after the last step", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness />);
+    await startTour(user);
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await user.click(await screen.findByRole("button", { name: "Next" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Start tour" })).toHaveFocus());
+  });
+
+  it("does not move focus when the opener is gone", async () => {
+    const user = userEvent.setup();
+
+    render(<OpenerHarness removeOpener />);
+    await startTour(user);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByRole("heading")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "Start tour" })).not.toBeInTheDocument();
+  });
+});
