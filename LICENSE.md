@@ -1,5 +1,3 @@
-Licensed under the MIT License. Copyright © 2026-present Wesley Júnior.
-
 MIT License
 
 Copyright © 2026-present Wesley Júnior
