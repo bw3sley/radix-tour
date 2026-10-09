@@ -227,6 +227,16 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. It thr
 
 The build preserves `"use client"`, so a Server Component can import the package. Put state and event handlers, such as the `open` state in the quick start, in a Client Component.
 
+## Agent skill
+
+The repo includes an [Agent Skill](https://agentskills.io) that teaches AI coding agents how to add and style a tour with radix-tour. It lives in [`skills/radix-tour`](./skills/radix-tour) and is not part of the npm package. Install it into your project with the [`skills` CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add bw3sley/radix-tour
+```
+
+Or copy the `skills/radix-tour` folder into your agent's skills directory, for example `.claude/skills/` for Claude Code.
+
 ## License
 
 License under the [MIT License](./LICENSE.md). If radix-tour helps your project, leave a feedback or ⭐ the repo.
