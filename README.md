@@ -1,4 +1,5 @@
 # radix-tour
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/bw3sley/radix-tour/badge)](https://securityscorecards.dev/viewer/?uri=github.com/bw3sley/radix-tour)
 
 An unstyled product tour library for React, built on [Radix](https://www.radix-ui.com/primitives) primitives. Use it to introduce a feature, guide someone through a page, or explain a workflow one step at a time.
 
