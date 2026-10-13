@@ -16,6 +16,8 @@ export default defineConfig({
     }),
   ],
   build: {
+    // Ship readable output: minified code raises a Socket.dev supply chain alert.
+    minify: false,
     lib: {
       entry: "src/index.ts",
       formats: ["es", "cjs"],
