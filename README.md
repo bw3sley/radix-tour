@@ -142,6 +142,7 @@ The card and spotlight are separate layers. Give `Tour.Spotlight` a lower `z-ind
 | Part | Attributes |
 | --- | --- |
 | `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` |
+| `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out |
 
 The spotlight is colored with `currentColor`, so a `text-*` class sets the overlay color and opacity.
@@ -199,14 +200,14 @@ function NextButton() {
 
 | Part | Renders | Notes |
 | --- | --- | --- |
-| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts the Popover content props (`side`, `sideOffset`, `collisionPadding`, ...), which override the step's values. Renders nothing until the target exists. |
+| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts the Popover content props (`side`, `sideOffset`, `collisionPadding`, `onOpenAutoFocus`, ...), which override the step's values. Renders no card until the target exists. Also renders a visually hidden `role="status"` live region (`data-tour-announcer`) that announces "Step N of M: title". |
 | `Tour.Arrow` | Radix Popover arrow | Place it inside `Tour.Content`. Fill it with a `fill-*` class. |
 | `Tour.Spotlight` | `svg` | Props: `padding` (px around the target, default 8) and `radius` (corner radius, default 8). |
-| `Tour.Title` | `h2` | Shows the step's `title` unless given children. |
-| `Tour.Description` | `p` | Shows the step's `description` unless given children. |
+| `Tour.Title` | `h2` | Shows the step's `title` unless given children. Labels the card (`aria-labelledby`). |
+| `Tour.Description` | `p` | Shows the step's `description` unless given children. Describes the card (`aria-describedby`). |
 | `Tour.Progress` | `span` | Shows `1 / 4` unless given children. |
 | `Tour.Next` | `button` | Goes to the next step. On the last step, closes the tour. |
-| `Tour.Previous` | `button` | Goes to the previous step. |
+| `Tour.Previous` | `button` | Goes to the previous step. On the first step it gets `aria-disabled` and `data-disabled`, does nothing on click and stays focusable (it is not `disabled`). |
 | `Tour.Close` | `button` | Closes the tour. |
 
 Every part forwards its ref and accepts `asChild`. Event handlers run before the built-in behavior, and calling `event.preventDefault()` in `onClick` cancels it.
@@ -218,11 +219,42 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. It thr
 ## Behavior
 
 - The page stays interactive while the tour is open. Clicking outside the card does not close it.
-- <kbd>Esc</kbd> closes the tour.
-- <kbd>→</kbd> and <kbd>←</kbd> move to the next and previous step while focus is inside the card. They do nothing on the last step (→) and the first step (←), so they never close the tour; use `Tour.Next` or <kbd>Esc</kbd> for that. They are ignored with a modifier key held, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `event.preventDefault()`.
-- When the tour closes, by <kbd>Esc</kbd>, `Tour.Close` or finishing the last step, focus returns to the element that was focused when it opened (usually your "Start tour" button). If that element is no longer in the page, focus is left alone.
 - Each step scrolls its target into view.
-- The card is a Radix Popover, so it is exposed to assistive technology as a dialog. The spotlight is hidden from it.
+- The spotlight is hidden from assistive technology (`aria-hidden`).
+
+## Keyboard and screen readers
+
+The card is a non-modal dialog. Focus is not trapped, so <kbd>Tab</kbd> can leave it, and the page stays usable.
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Move through the card's controls in DOM order. The card renders in a portal at the end of `<body>`, so Tab from the last control continues into the browser UI and Shift+Tab from the first control goes back to the page. |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activate the focused `Tour.Next`, `Tour.Previous` or `Tour.Close` (they are native buttons). |
+| <kbd>Esc</kbd> | Close the tour. |
+| <kbd>→</kbd> / <kbd>←</kbd> | Next and previous step. |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First and last step. |
+| <kbd>F6</kbd> | Return focus to the card from anywhere on the page. |
+
+<kbd>→</kbd>, <kbd>←</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> work while focus is inside the card. They do nothing when there is no step in that direction (the last step for <kbd>→</kbd> and <kbd>End</kbd>, the first for <kbd>←</kbd> and <kbd>Home</kbd>), so they never close the tour; use `Tour.Next` or <kbd>Esc</kbd> for that. They are ignored with a modifier key held, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `event.preventDefault()`. <kbd>F6</kbd> is the "next pane" key in most desktop apps; it works with no modifier and is skipped if another handler already called `preventDefault()` on it.
+
+Focus:
+
+- When the tour opens, focus moves to the card (`Tour.Content`, which has `tabindex="-1"`), so a screen reader reads its name and description and the arrow keys work straight away.
+- On a step change focus stays where it is: if the user pressed `Tour.Next`, they stay on `Tour.Next`. If the focused element disappears with the step, focus moves to the card.
+- To keep focus where it was when the tour opens, call `event.preventDefault()` in `onOpenAutoFocus` on `Tour.Content`. Focus then stays on the opener, and <kbd>F6</kbd> still brings the user into the card:
+
+  ```tsx
+  <Tour.Content onOpenAutoFocus={(event) => event.preventDefault()}>
+  ```
+
+- When the tour closes, by <kbd>Esc</kbd>, `Tour.Close` or finishing the last step, focus returns to the element that was focused when it opened (usually your "Start tour" button). If that element is no longer in the page, for example a menu item whose menu has closed, focus is left alone and falls back to the page.
+
+Screen readers:
+
+- `Tour.Content` is `role="dialog"`, labelled by `Tour.Title` and described by `Tour.Description` through `aria-labelledby` and `aria-describedby`. Give the card a `Tour.Title`; without one it has no accessible name.
+- A visually hidden live region (`role="status"`, `aria-live="polite"`) inside `Tour.Content` announces "Step 2 of 4: Find an order fast" when a step shows. The text is English.
+- The current target gets `aria-describedby` pointing at the card, added to any value it already has and removed when the step changes or the tour closes.
+- Keep a visible focus style on your buttons. The spotlight is not a hit target and sits below the card, and its cut-out leaves `padding` px around the target, so an outline up to that size on the target stays uncovered.
 
 ## Server Components
 

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { X } from "lucide-react";
 import * as React from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import * as Tour from "../index";
 import { CrumbApp } from "./stories/crumb-app";
 
@@ -61,7 +62,7 @@ const tones: Record<Tone, Record<string, string>> = {
 
 const focusRing = "outline-offset-2 focus-visible:outline-2 focus-visible:outline-amber";
 
-function TourCard({ tone }: { tone: Tone }) {
+function TourCard({ tone, alwaysShowBack }: { tone: Tone; alwaysShowBack: boolean }) {
   const { step, isFirst, isLast } = Tour.useTour();
 
   const styles = tones[tone];
@@ -86,9 +87,9 @@ function TourCard({ tone }: { tone: Tone }) {
         <Tour.Progress className={`text-xs tabular-nums ${styles.progress}`} />
 
         <div className="flex items-center gap-1.5">
-          {isFirst ? null : (
+          {isFirst && !alwaysShowBack ? null : (
             <Tour.Previous
-              className={`rounded-lg px-3 py-1.5 font-medium text-sm ${styles.back} ${focusRing}`}
+              className={`rounded-lg px-3 py-1.5 font-medium text-sm data-[disabled]:opacity-50 ${styles.back} ${focusRing}`}
             >
               Back
             </Tour.Previous>
@@ -111,9 +112,17 @@ interface CrumbTourProps {
   padding: number;
   radius: number;
   startOpen: boolean;
+  alwaysShowBack: boolean;
 }
 
-function CrumbTour({ tone, spotlight, padding, radius, startOpen }: CrumbTourProps) {
+function CrumbTour({
+  tone,
+  spotlight,
+  padding,
+  radius,
+  startOpen,
+  alwaysShowBack,
+}: CrumbTourProps) {
   const [open, setOpen] = React.useState(startOpen);
 
   return (
@@ -133,7 +142,7 @@ function CrumbTour({ tone, spotlight, padding, radius, startOpen }: CrumbTourPro
           <Tour.Spotlight padding={padding} radius={radius} className="z-40 text-ink/55" />
         ) : null}
 
-        <TourCard tone={tone} />
+        <TourCard tone={tone} alwaysShowBack={alwaysShowBack} />
       </Tour.Root>
     </CrumbApp>
   );
@@ -142,7 +151,14 @@ function CrumbTour({ tone, spotlight, padding, radius, startOpen }: CrumbTourPro
 const meta = {
   title: "Tour",
   component: CrumbTour,
-  args: { tone: "dark", spotlight: true, padding: 6, radius: 10, startOpen: true },
+  args: {
+    tone: "dark",
+    spotlight: true,
+    padding: 6,
+    radius: 10,
+    startOpen: true,
+    alwaysShowBack: false,
+  },
   argTypes: {
     tone: { control: "inline-radio", options: ["dark", "light"] },
     padding: { control: { type: "range", min: 0, max: 24, step: 2 } },
@@ -165,3 +181,39 @@ export const WithoutSpotlight: Story = { args: { spotlight: false, tone: "light"
 
 /** Start from "Take the tour", then close with Esc or Done: focus returns to that button. Arrow keys move between steps. */
 export const StartsClosed: Story = { args: { startOpen: false } };
+
+/**
+ * Keyboard only. Tab to "Take the tour" and press Enter: focus lands in the card. Tab reaches Back
+ * (focusable but inert on step 1), Next and Close. Space on Next keeps focus on Next, Home and End
+ * jump to the first and last step, F6 returns to the card after tabbing out, Esc returns focus to the
+ * opener. The spotlight sits below the card (z-40 against z-50) and its cut-out leaves room for focus rings.
+ */
+export const KeyboardFlow: Story = {
+  args: { startOpen: false, alwaysShowBack: true },
+  play: async ({ canvasElement }) => {
+    const opener = within(canvasElement).getByRole("button", { name: "Take the tour" });
+
+    opener.focus();
+    await userEvent.keyboard("{Enter}");
+
+    const card = await within(document.body).findByRole("dialog");
+
+    await waitFor(() => expect(card).toHaveFocus());
+
+    await userEvent.tab();
+    await expect(within(card).getByRole("button", { name: "Back" })).toHaveFocus();
+
+    await userEvent.tab();
+
+    const next = within(card).getByRole("button", { name: "Next" });
+
+    await expect(next).toHaveFocus();
+
+    await userEvent.keyboard(" ");
+    await waitFor(() => expect(card).toHaveAttribute("data-step", "1"));
+    await expect(next).toHaveFocus();
+
+    await userEvent.keyboard("{End}");
+    await waitFor(() => expect(card).toHaveAttribute("data-step", "3"));
+  },
+};

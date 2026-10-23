@@ -26,14 +26,14 @@ All exports come from `radix-tour`. Every part has a long name (`TourContent`) a
 
 | Part | Renders | Notes |
 | --- | --- | --- |
-| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts Popover content props (`side`, `sideOffset` default 14, `collisionPadding` default 12, ...) which override the step. Renders nothing until the target exists. Rendered in a portal. |
+| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts Popover content props (`side`, `sideOffset` default 14, `collisionPadding` default 12, `onOpenAutoFocus`, ...) which override the step. Renders no card until the target exists. Rendered in a portal. Also renders a visually hidden `role="status"` `aria-live="polite"` region (`data-tour-announcer`) announcing "Step N of M: title". |
 | `Tour.Arrow` | Radix Popover arrow | Place inside `Tour.Content`. Colour with `fill-*`. |
 | `Tour.Spotlight` | `svg` | Props: `padding` (px around the target, default 8), `radius` (corner radius, default 8). Fixed, full-viewport, `pointer-events: none`, `aria-hidden`. Colour with `text-*`. Sibling of `Tour.Content`, can be omitted. |
-| `Tour.Title` | `h2` | Shows `step.title` unless given children. |
-| `Tour.Description` | `p` | Shows `step.description` unless given children. |
+| `Tour.Title` | `h2` | Shows `step.title` unless given children. Its id is the card's `aria-labelledby`. |
+| `Tour.Description` | `p` | Shows `step.description` unless given children. Its id is the card's `aria-describedby`. |
 | `Tour.Progress` | `span` | Shows `1 / 4` unless given children. |
 | `Tour.Next` | `button` | Next step. On the last step, closes the tour. |
-| `Tour.Previous` | `button` | Previous step. Does nothing on the first step. |
+| `Tour.Previous` | `button` | Previous step. On the first step it has `aria-disabled` and `data-disabled`, stays focusable (not `disabled`) and does nothing on click. |
 | `Tour.Close` | `button` | Closes the tour. Give it an `aria-label` if it has no visible text. |
 
 Every part forwards its ref and accepts `asChild`. Handlers you pass run before the built-in behaviour, and `event.preventDefault()` in `onClick` cancels it.
@@ -47,13 +47,16 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 | Part | Attributes |
 | --- | --- |
 | `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` |
+| `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out rect |
 
 ## Behaviour
 
 - The page stays interactive. Clicking outside the card does not close it.
-- Esc closes the tour.
-- ArrowRight / ArrowLeft change step only while focus is inside the card. They never close the tour, are ignored on the last / first step, with a modifier key, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `preventDefault()`.
+- Key map: Tab / Shift+Tab move through the card in DOM order (it is portaled to the end of `<body>`); Enter / Space activate the focused button; Esc closes; ArrowRight / ArrowLeft go to the next / previous step; End / Home go to the last / first step; F6 returns focus to the card from anywhere.
+- Arrows, Home and End work only while focus is inside the card. They never close the tour, are ignored when there is no step in that direction, with a modifier key, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `preventDefault()`.
+- Focus moves to the card when the tour opens unless `onOpenAutoFocus` on `Tour.Content` calls `preventDefault()`. On a step change it moves only if the focused element vanished, otherwise it stays (a user on `Tour.Next` stays there).
+- The current target gets `aria-describedby` pointing at the card, appended to its existing value and removed on step change and close.
 - On close, focus returns to the element that was focused when the tour opened (if still in the page).
 - Each step scrolls its target into view (`block: "center"`, smooth) and the card and spotlight follow it on scroll and resize.
 - The card is a Radix Popover, exposed to assistive technology as a dialog.
