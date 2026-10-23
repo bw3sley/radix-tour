@@ -29,7 +29,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Library** - React 18/19 (peer dependency), published as ESM + CJS with type declarations
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
 - **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
-- **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet for the step motion (`src/motion.css`), injected on import; everything else is unstyled
+- **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), injected on import; everything else is unstyled
 - **Testing** - Vitest + Testing Library (jsdom)
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
 - **Icons** - Lucide React (stories only, dev dependency)
@@ -48,7 +48,7 @@ src/
   index.ts            # public API; anything not exported here is internal
   tour.tsx            # every Tour part in one file, Radix-style
   hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
-  motion.css          # step motion, built into the bundle and added to <head> on import (like Sonner)
+  styles.css          # the library's own CSS (step motion), built into the bundle and added to <head> on import (like Sonner)
   tour.test.tsx       # unit tests
   tour.stories.tsx    # Storybook stories
   crumb-app.tsx       # fictional bakery dashboard the stories run the tour against
@@ -84,7 +84,7 @@ Follow Radix's alert-dialog layout in `src/tour.tsx`:
 - Exports go at the bottom of the file: long names (`TourContent`) plus short aliases (`Content`), so consumers write `import * as Tour from "radix-tour"`.
 - Re-export public names and prop types from `src/index.ts`.
 
-Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`. Motion ships as `src/motion.css`, injected into `<head>` on import: `Tour.Root` takes `motion` (default true), `--tour-duration` and `--tour-ease` tune it, and `Tour.Content` stays mounted across steps and sets `data-motion` and `data-placed`.
+Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`. Motion ships in `src/styles.css`, injected into `<head>` on import: `Tour.Root` takes `motion` (default true), `--tour-duration` and `--tour-ease` tune it, and `Tour.Content` stays mounted across steps and sets `data-motion` and `data-placed`.
 
 ## Stories
 
