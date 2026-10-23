@@ -1,10 +1,15 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import cssInjectedByJs from "vite-plugin-css-injected-by-js";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
   plugins: [
     react(),
+
+    // Like Sonner: the CSS is built into the JS and added to <head> when the package loads.
+    cssInjectedByJs({ styleId: "radix-tour", topExecutionPriority: false }),
+
     dts({
       include: ["src"],
       exclude: [

@@ -828,13 +828,6 @@ function MotionHarness({ motion }: { motion?: boolean }) {
 }
 
 describe("Tour motion", () => {
-  it("adds its stylesheet to the page once", async () => {
-    render(<MotionHarness />);
-    await screen.findByTestId("card");
-
-    expect(document.head.querySelectorAll("style[data-radix-tour]")).toHaveLength(1);
-  });
-
   it("marks the card, spotlight, title and description for the stylesheet", async () => {
     render(<MotionHarness />);
 

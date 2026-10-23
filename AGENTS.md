@@ -29,7 +29,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Library** - React 18/19 (peer dependency), published as ESM + CJS with type declarations
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
 - **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
-- **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), injected on import; everything else is unstyled
+- **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), added to `<head>` by the build when the package loads; everything else is unstyled
 - **Testing** - Vitest + Testing Library (jsdom)
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
 - **Icons** - Lucide React (stories only, dev dependency)
@@ -48,12 +48,11 @@ src/
   index.ts            # public API; anything not exported here is internal
   tour.tsx            # every Tour part in one file, Radix-style
   hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
-  styles.css          # the library's own CSS (step motion), built into the bundle and added to <head> on import (like Sonner)
+  styles.css          # the library's own CSS (step motion), put in the bundle by vite-plugin-css-injected-by-js and added to <head> when the package loads, like Sonner
   tour.test.tsx       # unit tests
   tour.stories.tsx    # Storybook stories
   crumb-app.tsx       # fictional bakery dashboard the stories run the tour against
   test-setup.ts       # Vitest setup (jest-dom, jsdom stubs)
-  vite-env.d.ts       # Vite client types, for the `?inline` CSS import
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/

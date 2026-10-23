@@ -9,17 +9,7 @@ import { Primitive } from "@radix-ui/react-primitive";
 import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect, useTarget, useTourKeys } from "./hooks";
-import styles from "./styles.css?inline";
-
-// Like Sonner: the stylesheet (src/styles.css) is built into the bundle and added to <head> on import, so there is
-// no CSS file to import. Guarded for the server.
-if (typeof document !== "undefined" && !document.querySelector("style[data-radix-tour]")) {
-  const style = document.createElement("style");
-
-  style.setAttribute("data-radix-tour", "");
-  style.textContent = styles;
-  document.head.appendChild(style);
-}
+import "./styles.css";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
