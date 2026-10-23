@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
-import * as Tour from "../index";
+import * as Tour from "./index";
 
 const steps: Tour.TourStep[] = [
   { id: "first", target: "#first", title: "First", description: "First step." },

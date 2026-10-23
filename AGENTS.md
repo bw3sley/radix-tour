@@ -29,7 +29,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Library** - React 18/19 (peer dependency), published as ESM + CJS with type declarations
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
 - **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
-- **Styling** - consumer-owned Tailwind CSS v4; the library ships no styles
+- **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet for the step motion (`src/motion.css`), injected on import; everything else is unstyled
 - **Testing** - Vitest + Testing Library (jsdom)
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
 - **Icons** - Lucide React (stories only, dev dependency)
@@ -46,19 +46,14 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
   preview-head.html   # loads the story font (Schibsted Grotesk)
 src/
   index.ts            # public API; anything not exported here is internal
+  tour.tsx            # every Tour part in one file, Radix-style
+  hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
+  motion.css          # step motion, built into the bundle and added to <head> on import (like Sonner)
+  tour.test.tsx       # unit tests
+  tour.stories.tsx    # Storybook stories
+  crumb-app.tsx       # fictional bakery dashboard the stories run the tour against
   test-setup.ts       # Vitest setup (jest-dom, jsdom stubs)
-  components/
-    tour.tsx          # every Tour part in one file, Radix-style
-    tour.test.tsx     # unit tests
-    tour.stories.tsx  # Storybook stories
-    stories/
-      crumb-app.tsx   # fictional bakery dashboard the stories run the tour against
-  hooks/
-    use-target.ts     # resolve a selector to an element, waiting for it to mount
-    use-rect.ts       # track an element's viewport rect
-    use-reduced-motion.ts # prefers-reduced-motion as a hook (matchMedia)
-    use-step-fade.ts  # fade title and description in when the step changes
-    use-tour-keys.ts  # document key listener: arrows, Home/End, F6 (guards inputs and widgets)
+  vite-env.d.ts       # Vite client types, for the `?inline` CSS import
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
@@ -78,7 +73,7 @@ CLAUDE.md             # points agents back to this file
 
 ## Component Structure
 
-Follow Radix's alert-dialog layout in `src/components/tour.tsx`:
+Follow Radix's alert-dialog layout in `src/tour.tsx`:
 
 - One file per component. Each part gets a banner comment (`/* --- TourContent --- */`).
 - A `const CONTENT_NAME = "TourContent"` per part, used for `displayName` and context errors.
@@ -89,13 +84,13 @@ Follow Radix's alert-dialog layout in `src/components/tour.tsx`:
 - Exports go at the bottom of the file: long names (`TourContent`) plus short aliases (`Content`), so consumers write `import * as Tour from "radix-tour"`.
 - Re-export public names and prop types from `src/index.ts`.
 
-Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`. Motion ships in the library as inline styles (no stylesheet): `Tour.Root` takes `motion` (default true), and `--tour-duration` and `--tour-ease` tune it. `Tour.Content` stays mounted across steps and sets `data-state` and `data-motion`.
+Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`. Motion ships as `src/motion.css`, injected into `<head>` on import: `Tour.Root` takes `motion` (default true), `--tour-duration` and `--tour-ease` tune it, and `Tour.Content` stays mounted across steps and sets `data-motion` and `data-placed`.
 
 ## Stories
 
-- Stories run the tour against the fictional Crumb dashboard in `src/components/stories/crumb-app.tsx`. Its tour targets are `#route-nav`, `#search`, `#status-tabs` and `#new-order`. Keep those ids in sync with the steps in `tour.stories.tsx`.
+- Stories run the tour against the fictional Crumb dashboard in `src/crumb-app.tsx`. Its tour targets are `#route-nav`, `#search`, `#status-tabs` and `#new-order`. Keep those ids in sync with the steps in `tour.stories.tsx`.
 - Story-only styling (theme tokens) lives in `.storybook/preview.css`, not in the library. Motion belongs to the library, not the stories.
-- Story files and `stories/` are excluded from the published type declarations in `vite.config.ts`.
+- The story files and `src/crumb-app.tsx` are excluded from the published type declarations in `vite.config.ts`.
 - When a change alters how the `Default` story looks or behaves, re-record `radix-tour.gif` (repo root) and commit the new file. The README embeds it through its `raw.githubusercontent.com` URL, so the npm page shows it too.
 
 ## Path Aliases
@@ -104,13 +99,13 @@ None. Use relative imports.
 
 ## Client Components
 
-Components that use state, effects, refs or Radix internals start with `"use client"`, so the package works under React Server Components. Keep it at the top of `src/components/tour.tsx`.
+Components that use state, effects, refs or Radix internals start with `"use client"`, so the package works under React Server Components. Keep it at the top of `src/tour.tsx`.
 
 Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client";` as a banner on every output file. Do not remove it. After changing the build, check that `dist/index.js` and `dist/index.cjs` still start with it.
 
 ## Key Conventions
 
-- Reusable parts belong in `src/components/`. Shared hooks belong in `src/hooks/`.
+- Keep `src/` flat: the parts in `src/tour.tsx`, shared hooks in `src/hooks.ts`. Add a file, not a folder, when something new needs its own module.
 - Build only what a story or test renders today. Do not add speculative parts or options.
 - New behavior needs a test. A change to what users see also needs a story.
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.

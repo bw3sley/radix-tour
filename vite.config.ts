@@ -10,7 +10,7 @@ export default defineConfig({
       exclude: [
         "src/**/*.test.tsx",
         "src/**/*.stories.tsx",
-        "src/**/stories/**",
+        "src/crumb-app.tsx",
         "src/test-setup.ts",
       ],
     }),

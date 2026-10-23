@@ -8,10 +8,8 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Primitive } from "@radix-ui/react-primitive";
 import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
-import { useRect } from "../hooks/use-rect";
-import { useTarget } from "../hooks/use-target";
-import { useTourKeys } from "../hooks/use-tour-keys";
-import motionCss from "../motion.css?inline";
+import { useRect, useTarget, useTourKeys } from "./hooks";
+import motionCss from "./motion.css?inline";
 
 // Like Sonner: the stylesheet is built into the bundle and added to <head> on import, so there is
 // no CSS file to import. Guarded for the server.

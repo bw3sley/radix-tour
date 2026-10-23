@@ -10,7 +10,7 @@ export type {
   TourSpotlightProps,
   TourStep,
   TourTitleProps,
-} from "./components/tour";
+} from "./tour";
 
 export {
   Arrow,
@@ -35,4 +35,4 @@ export {
   TourSpotlight,
   TourTitle,
   useTour,
-} from "./components/tour";
+} from "./tour";

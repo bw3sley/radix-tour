@@ -1,5 +1,82 @@
 import { useCallbackRef } from "@radix-ui/react-use-callback-ref";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+/** Resolves a CSS selector to an element, waiting for it to appear in the DOM. */
+export function useTarget(selector: string | undefined): Element | null {
+  const [element, setElement] = useState<Element | null>(null);
+
+  useEffect(() => {
+    if (!selector) {
+      setElement(null);
+
+      return;
+    }
+
+    const found = document.querySelector(selector);
+
+    setElement(found);
+
+    if (found) {
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const appeared = document.querySelector(selector);
+
+      if (!appeared) {
+        return;
+      }
+
+      setElement(appeared);
+      observer.disconnect();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [selector]);
+
+  return element;
+}
+
+/** Tracks an element's viewport rect across scroll, resize and layout shifts. */
+export function useRect(element: Element | null): DOMRect | null {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (!element) {
+      setRect(null);
+
+      return;
+    }
+
+    const observed = element;
+
+    let frame = 0;
+
+    function update() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setRect(observed.getBoundingClientRect()));
+    }
+
+    update();
+
+    const resizeObserver = new ResizeObserver(update);
+
+    resizeObserver.observe(observed);
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [element]);
+
+  return rect;
+}
 
 const ARROW_KEY_WIDGETS = [
   "menu",

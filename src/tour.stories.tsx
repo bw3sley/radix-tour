@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { X } from "lucide-react";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import * as Tour from "../index";
-import { CrumbApp } from "./stories/crumb-app";
+import { CrumbApp } from "./crumb-app";
+import * as Tour from "./index";
 
 const steps: Tour.TourStep[] = [
   {
