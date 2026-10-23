@@ -28,7 +28,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 
 - **Library** - React 18/19 (peer dependency), published as ESM + CJS with type declarations
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
-- **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `primitive`
+- **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
 - **Styling** - consumer-owned Tailwind CSS v4; the library ships no styles
 - **Testing** - Vitest + Testing Library (jsdom)
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
@@ -42,7 +42,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 .storybook/
   main.ts             # Storybook config, Tailwind added through viteFinal
   preview.ts          # global parameters (a11y checks)
-  preview.css         # Tailwind entry, story theme tokens, spotlight and card motion
+  preview.css         # Tailwind entry and story theme tokens
   preview-head.html   # loads the story font (Schibsted Grotesk)
 src/
   index.ts            # public API; anything not exported here is internal
@@ -56,6 +56,8 @@ src/
   hooks/
     use-target.ts     # resolve a selector to an element, waiting for it to mount
     use-rect.ts       # track an element's viewport rect
+    use-reduced-motion.ts # prefers-reduced-motion as a hook (matchMedia)
+    use-step-fade.ts  # fade title and description in when the step changes
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
@@ -86,12 +88,12 @@ Follow Radix's alert-dialog layout in `src/components/tour.tsx`:
 - Exports go at the bottom of the file: long names (`TourContent`) plus short aliases (`Content`), so consumers write `import * as Tour from "radix-tour"`.
 - Re-export public names and prop types from `src/index.ts`.
 
-Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`; the library applies no styling or motion to them.
+Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Description`, `Progress`, `Next`, `Previous`, `Close`, plus the `useTour()` hook and the `TourStep` type (`id`, `target`, `title`, `description`, `side`, `align`). The spotlight exposes `data-tour-spotlight` and `data-tour-cutout`. Motion ships in the library as inline styles (no stylesheet): `Tour.Root` takes `motion` (default true), and `--tour-duration` and `--tour-ease` tune it. `Tour.Content` stays mounted across steps and sets `data-state` and `data-motion`.
 
 ## Stories
 
 - Stories run the tour against the fictional Crumb dashboard in `src/components/stories/crumb-app.tsx`. Its tour targets are `#route-nav`, `#search`, `#status-tabs` and `#new-order`. Keep those ids in sync with the steps in `tour.stories.tsx`.
-- Story-only styling (theme tokens, spotlight glide, card entrance) lives in `.storybook/preview.css`, not in the library.
+- Story-only styling (theme tokens) lives in `.storybook/preview.css`, not in the library. Motion belongs to the library, not the stories.
 - Story files and `stories/` are excluded from the published type declarations in `vite.config.ts`.
 - When a change alters how the `Default` story looks or behaves, re-record `radix-tour.gif` (repo root) and commit the new file. The README embeds it through its `raw.githubusercontent.com` URL, so the npm page shows it too.
 

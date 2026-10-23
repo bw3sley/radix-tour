@@ -9,7 +9,8 @@ All exports come from `radix-tour`. Every part has a long name (`TourContent`) a
 | `steps` | `TourStep[]` | The steps, in order. |
 | `open` | `boolean` | Whether the tour is showing. Opening always starts at the first step. |
 | `onOpenChange` | `(open: boolean) => void` | Called with `false` when the last step is finished, or on `Tour.Close` or Esc. |
-| `children` | `ReactNode` | The parts. Renders nothing while closed, so children unmount on close. |
+| `motion` | `boolean` | Animate the card and spotlight between steps and on open and close. Default `true`. |
+| `children` | `ReactNode` | The parts. They stay rendered while closed; `Tour.Content` and `Tour.Spotlight` render nothing then. |
 
 ## `TourStep`
 
@@ -26,7 +27,7 @@ All exports come from `radix-tour`. Every part has a long name (`TourContent`) a
 
 | Part | Renders | Notes |
 | --- | --- | --- |
-| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts Popover content props (`side`, `sideOffset` default 14, `collisionPadding` default 12, `onOpenAutoFocus`, ...) which override the step. Renders no card until the target exists. Rendered in a portal. Also renders a visually hidden `role="status"` `aria-live="polite"` region (`data-tour-announcer`) announcing "Step N of M: title". |
+| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts Popover content props (`side`, `sideOffset` default 14, `collisionPadding` default 12, `onOpenAutoFocus`, ...) which override the step. Renders nothing until the target exists, then stays mounted across steps so the card glides. Rendered in a portal. Never unmount it yourself between steps. Also renders a visually hidden `role="status"` `aria-live="polite"` region (`data-tour-announcer`) announcing "Step N of M: title". |
 | `Tour.Arrow` | Radix Popover arrow | Place inside `Tour.Content`. Colour with `fill-*`. |
 | `Tour.Spotlight` | `svg` | Props: `padding` (px around the target, default 8), `radius` (corner radius, default 8). Fixed, full-viewport, `pointer-events: none`, `aria-hidden`. Colour with `text-*`. Sibling of `Tour.Content`, can be omitted. |
 | `Tour.Title` | `h2` | Shows `step.title` unless given children. Its id is the card's `aria-labelledby`. |
@@ -46,7 +47,7 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 
 | Part | Attributes |
 | --- | --- |
-| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` |
+| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, `closed` while the exit plays), `data-motion` (`from-start` after a forward step, `from-end` after a back step) |
 | `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out rect |
 
@@ -59,6 +60,8 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 - The current target gets `aria-describedby` pointing at the card, appended to its existing value and removed on step change and close.
 - On close, focus returns to the element that was focused when the tour opened (if still in the page).
 - Each step scrolls its target into view (`block: "center"`, smooth) and the card and spotlight follow it on scroll and resize.
+- Motion is on by default: the card glides between targets (`transform`), scales in from 0.96 and fades on open and close, the spotlight cut-out follows, and the title and description fade on each step. Tune with the CSS variables `--tour-duration` (default 220ms for moves, 150ms for enter and exit) and `--tour-ease` (default `cubic-bezier(0.23, 1, 0.32, 1)`); disable with `<Tour.Root motion={false}>`. `prefers-reduced-motion: reduce` removes movement and keeps a short opacity fade.
+- `Tour.Content` fades out on close, so it unmounts shortly after `open` becomes `false`.
 - The card is a Radix Popover, exposed to assistive technology as a dialog.
 
 ## Types

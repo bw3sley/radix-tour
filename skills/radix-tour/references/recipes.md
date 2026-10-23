@@ -10,21 +10,20 @@
 </Tour.Next>
 ```
 
-## Animated spotlight
+## Tune or turn off the motion
 
-The cut-out is an SVG rect, so CSS can glide it between targets. Put this in the app's global stylesheet:
+The card glide, the enter and exit, the spotlight cut-out and the text fade ship with the library. Nothing to import. Change the timing with CSS variables, in a global stylesheet or on the card:
 
 ```css
-@media (prefers-reduced-motion: no-preference) {
-  [data-tour-cutout] {
-    transition:
-      x 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      y 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      width 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      height 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
+:root {
+  --tour-duration: 300ms;
+  --tour-ease: cubic-bezier(0.77, 0, 0.175, 1);
 }
 ```
+
+`--tour-duration` defaults to 220ms for moves and 150ms for enter and exit; `--tour-ease` defaults to `cubic-bezier(0.23, 1, 0.32, 1)`. Turn everything off with `<Tour.Root motion={false}>`. `prefers-reduced-motion: reduce` already removes movement and keeps a short fade.
+
+To style enter or exit by direction, use `data-state` and `data-motion` (`from-start` after a forward step, `from-end` after a back step) on `Tour.Content`. Do not unmount `Tour.Content` between steps yourself: a fresh card has nothing to glide from.
 
 ## Show the tour once per user
 

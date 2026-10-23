@@ -1,7 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Tour from "../index";
 
 const steps: Tour.TourStep[] = [
@@ -78,7 +78,8 @@ describe("Tour", () => {
     await user.click(await screen.findByRole("button", { name: "Next" }));
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+
+    await waitFor(() => expect(screen.queryByRole("heading")).not.toBeInTheDocument());
   });
 
   it("closes on Escape and on the close button", async () => {
@@ -726,5 +727,399 @@ describe("Tour key map", () => {
     await user.keyboard("{Enter}");
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+});
+
+function MotionHarness({ motion }: { motion?: boolean }) {
+  const [open, setOpen] = React.useState(true);
+
+  return (
+    <>
+      <button type="button" id="first">
+        first target
+      </button>
+
+      <button type="button" id="second">
+        second target
+      </button>
+
+      <Tour.Root steps={steps} open={open} onOpenChange={setOpen} motion={motion}>
+        <Tour.Spotlight />
+
+        <Tour.Content data-testid="card">
+          <Tour.Title />
+          <Tour.Description />
+          <Tour.Previous>Back</Tour.Previous>
+          <Tour.Next>Next</Tour.Next>
+          <Tour.Close aria-label="Close tour">x</Tour.Close>
+        </Tour.Content>
+      </Tour.Root>
+    </>
+  );
+}
+
+function wrapperOf(card: HTMLElement) {
+  const wrapper = card.closest<HTMLElement>("[data-radix-popper-content-wrapper]");
+
+  if (!wrapper) {
+    throw new Error("popper wrapper not found");
+  }
+
+  return wrapper;
+}
+
+function mockReducedMotion(matches: boolean) {
+  vi.spyOn(window, "matchMedia").mockImplementation(
+    (query) =>
+      ({
+        matches,
+        media: query,
+        addEventListener() {},
+        removeEventListener() {},
+      }) as unknown as MediaQueryList,
+  );
+}
+
+function stubAnimate() {
+  const animate = vi.fn();
+
+  Object.defineProperty(Element.prototype, "animate", {
+    value: animate,
+    configurable: true,
+    writable: true,
+  });
+
+  return animate;
+}
+
+describe("Tour motion", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+
+    Reflect.deleteProperty(Element.prototype, "animate");
+  });
+
+  it("styles the card and the popper wrapper for the enter and the glide", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+    const wrapper = wrapperOf(card);
+
+    expect(card).toHaveAttribute("data-state", "open");
+    expect(card).toHaveAttribute("data-motion", "from-start");
+    expect(card.style.transformOrigin).toBe("var(--radix-popover-content-transform-origin)");
+    expect(card.style.transition).toContain("opacity");
+    expect(card.style.transition).toContain("transform");
+    expect(card.style.transition).toContain("--tour-duration");
+    expect(card.style.transition).toContain("--tour-ease");
+    expect(card.style.transition).not.toMatch(/\ball\b/);
+
+    await waitFor(() => expect(card.style.opacity).toBe("1"));
+
+    expect(card.style.transform).toBe("none");
+    expect(wrapper.style.transition).toMatch(/^transform 220ms cubic-bezier/);
+  });
+
+  it("enters from a small scale, never from scale(0)", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    expect(card.style.opacity).toBe("0");
+    expect(card.style.transform).toBe("scale(0.96)");
+  });
+
+  it("does not transition the first placement", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+    const wrapper = wrapperOf(card);
+
+    expect(wrapper.style.transition).toBe("");
+
+    await waitFor(() => expect(wrapper.style.transition).not.toBe(""));
+  });
+
+  it("reads the duration and ease from the CSS variables on the card", async () => {
+    render(
+      <>
+        <button type="button" id="first">
+          t
+        </button>
+
+        <Tour.Root steps={steps} open onOpenChange={vi.fn()}>
+          <Tour.Content
+            data-testid="card"
+            style={{ "--tour-duration": "400ms", "--tour-ease": "linear" } as React.CSSProperties}
+          >
+            <Tour.Title />
+          </Tour.Content>
+        </Tour.Root>
+      </>,
+    );
+
+    const card = await screen.findByTestId("card");
+
+    await waitFor(() => expect(wrapperOf(card).style.transition).toBe("transform 400ms linear"));
+  });
+
+  it("sets data-motion from the direction of the last step change", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(card).toHaveAttribute("data-motion", "from-start");
+    expect(card).toHaveAttribute("data-step", "1");
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(card).toHaveAttribute("data-motion", "from-end");
+    expect(card).toHaveAttribute("data-step", "0");
+  });
+
+  it("keeps the same card mounted across steps", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
+    expect(screen.getByTestId("card")).toBe(card);
+  });
+
+  it("keeps the card mounted while the next target is briefly missing", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <button type="button" id="first">
+          first target
+        </button>
+
+        <Tour.Root steps={steps} open onOpenChange={vi.fn()}>
+          <Tour.Content data-testid="card">
+            <Tour.Title />
+            <Tour.Next>Next</Tour.Next>
+          </Tour.Content>
+        </Tour.Root>
+      </>,
+    );
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(screen.getByTestId("card")).toBe(card);
+    expect(card).toHaveAttribute("data-state", "open");
+
+    const second = document.createElement("button");
+
+    second.id = "second";
+    document.body.append(second);
+
+    await waitFor(() => expect(screen.getByTestId("card")).toBe(card));
+
+    second.remove();
+  });
+
+  it("leaves no stuck state after rapid next and previous clicks", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+    const next = screen.getByRole("button", { name: "Next" });
+    const back = screen.getByRole("button", { name: "Back" });
+
+    fireEvent.click(next);
+    fireEvent.click(back);
+    fireEvent.click(next);
+    fireEvent.click(back);
+
+    expect(await screen.findByRole("heading", { name: "First" })).toBeInTheDocument();
+    expect(screen.getByTestId("card")).toBe(card);
+    expect(card).toHaveAttribute("data-state", "open");
+    expect(card).toHaveAttribute("data-step", "0");
+
+    await waitFor(() => expect(card.style.opacity).toBe("1"));
+  });
+
+  it("keeps the card mounted until the exit transition ends", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+    expect(screen.getByTestId("card")).toBe(card);
+    expect(card).toHaveAttribute("data-state", "closed");
+    expect(card.style.opacity).toBe("0");
+
+    fireEvent.transitionEnd(card);
+
+    await waitFor(() => expect(screen.queryByTestId("card")).not.toBeInTheDocument());
+  });
+
+  it("removes the card after a fallback timeout when no transition runs", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    await screen.findByTestId("card");
+    await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+    expect(screen.getByTestId("card")).toHaveAttribute("data-state", "closed");
+
+    await waitFor(() => expect(screen.queryByTestId("card")).not.toBeInTheDocument());
+  });
+
+  it("ignores transitions that bubble up from inside the card", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    await screen.findByTestId("card");
+    await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+    fireEvent.transitionEnd(screen.getByRole("button", { name: "Next" }));
+
+    expect(screen.getByTestId("card")).toBeInTheDocument();
+  });
+
+  it("cancels the exit when the tour reopens", async () => {
+    function Reopen() {
+      const [open, setOpen] = React.useState(true);
+
+      return (
+        <>
+          <button type="button" id="first">
+            first target
+          </button>
+
+          <button type="button" onClick={() => setOpen(!open)}>
+            Toggle
+          </button>
+
+          <Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
+            <Tour.Content data-testid="card">
+              <Tour.Title />
+            </Tour.Content>
+          </Tour.Root>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+
+    render(<Reopen />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Toggle" }));
+    await user.click(screen.getByRole("button", { name: "Toggle" }));
+
+    await waitFor(() => expect(card).toHaveAttribute("data-state", "open"));
+
+    expect(screen.getByTestId("card")).toBe(card);
+  });
+
+  it("transitions the spotlight cut-out with the same duration and ease", async () => {
+    render(<MotionHarness />);
+
+    await waitFor(() => expect(document.querySelector("[data-tour-cutout]")).toBeInTheDocument());
+
+    const cutout = document.querySelector<SVGElement>("[data-tour-cutout]");
+
+    for (const property of ["x", "y", "width", "height"]) {
+      expect(cutout?.style.transition).toContain(`${property} var(--tour-duration, 220ms)`);
+    }
+  });
+
+  it("fades the title and description in on step change, not on first render", async () => {
+    const animate = stubAnimate();
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    await screen.findByRole("heading", { name: "First" });
+
+    expect(animate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(animate).toHaveBeenCalledTimes(2);
+    expect(animate).toHaveBeenCalledWith([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 120,
+      easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+    });
+  });
+
+  describe("with motion={false}", () => {
+    it("adds no styles or transitions and unmounts at once on close", async () => {
+      const animate = stubAnimate();
+      const user = userEvent.setup();
+
+      render(<MotionHarness motion={false} />);
+
+      const card = await screen.findByTestId("card");
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      expect(card.style.opacity).toBe("");
+      expect(card.style.transition).toBe("");
+      expect(wrapperOf(card).style.transition).toBe("");
+      expect(document.querySelector<SVGElement>("[data-tour-cutout]")?.style.transition).toBe("");
+
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      expect(animate).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+      expect(screen.queryByTestId("card")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("with prefers-reduced-motion", () => {
+    it("drops movement and keeps a short opacity fade", async () => {
+      mockReducedMotion(true);
+
+      render(<MotionHarness />);
+
+      const card = await screen.findByTestId("card");
+
+      await waitFor(() => expect(card.style.opacity).toBe("1"));
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      expect(card.style.transform).toBe("none");
+      expect(card.style.transition).toContain("opacity");
+      expect(card.style.transition).not.toContain("transform");
+      expect(wrapperOf(card).style.transition).toBe("");
+      expect(document.querySelector<SVGElement>("[data-tour-cutout]")?.style.transition).toBe("");
+    });
+
+    it("still fades out on close", async () => {
+      mockReducedMotion(true);
+
+      const user = userEvent.setup();
+
+      render(<MotionHarness />);
+
+      const card = await screen.findByTestId("card");
+
+      await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+      expect(card).toHaveAttribute("data-state", "closed");
+      expect(card.style.opacity).toBe("0");
+      expect(card.style.transform).toBe("none");
+    });
   });
 });
