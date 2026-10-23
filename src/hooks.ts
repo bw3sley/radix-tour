@@ -111,7 +111,6 @@ function ownsArrowKeys(element: HTMLElement) {
 interface UseTourKeysOptions {
   enabled: boolean;
 
-  /** The card. Home and End only act while focus is inside it. */
   card: React.RefObject<Element | null>;
 
   isFirst: boolean;
@@ -122,21 +121,10 @@ interface UseTourKeysOptions {
   onPrevious: () => void;
   onGoTo: (index: number) => void;
 
-  /** F6: bring focus back to the card. */
   onFocusCard: () => void;
 }
 
-/**
- * Tour keys, listened for on the document:
- * - Arrows change step from anywhere, so a click on the page or a Tab out of the card does not
- *   strand the keyboard. Inputs, editors and widgets that use arrows are left alone.
- * - Home and End jump to the first and last step, only inside the card (elsewhere they scroll).
- * - F6 returns focus to the card.
- *
- * Listens in the bubble phase, so a consumer's React `onKeyDown` on the card runs first and its
- * `preventDefault()` cancels the key. The handler is kept in a ref (the same approach as Radix's
- * `useEscapeKeydown`), so the listener is added once instead of on every render.
- */
+/** Arrows, Home, End and F6, listened for on the document. */
 export function useTourKeys(options: UseTourKeysOptions) {
   const { enabled, card } = options;
 

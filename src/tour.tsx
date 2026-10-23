@@ -45,16 +45,13 @@ interface TourContextValue {
   isLast: boolean;
   open: boolean;
 
-  /** Whether the built-in motion is on (the `motion` prop). */
   motion: boolean;
 
-  /** Which way the last step change went: forward is "from-start", back is "from-end". */
   direction: TourDirection;
 
   /** The resolved DOM element for the current step, or null while it is still missing. */
   target: Element | null;
 
-  /** Id the card carries, so the target can point at it. */
   contentId: string;
 
   titleId: string | undefined;
@@ -62,7 +59,6 @@ interface TourContextValue {
   onTitleIdChange: (id: string | undefined) => void;
   onDescriptionIdChange: (id: string | undefined) => void;
 
-  /** Where focus is relative to the card. Lives here so it survives the card remounting. */
   focus: React.RefObject<FocusState>;
 
   onNext: () => void;
@@ -72,10 +68,8 @@ interface TourContextValue {
 }
 
 interface FocusState {
-  /** True once the card has taken its first focus for this opening. */
   opened: boolean;
 
-  /** True while focus is inside the card. */
   within: boolean;
 }
 
@@ -105,8 +99,6 @@ function Tour(props: ScopedProps<TourProps>) {
   const contentId = React.useId();
   const focus = React.useRef<FocusState>({ opened: false, within: false });
 
-  // Restart at the first step on every open. Done while rendering, not in an effect, so the
-  // first frame never anchors the card to the previous session's step.
   if (open !== wasOpen) {
     setWasOpen(open);
 
@@ -131,15 +123,12 @@ function Tour(props: ScopedProps<TourProps>) {
 
   const openerRef = React.useRef<Element | null>(null);
 
-  // Layout effect: the card's autofocus runs in a passive effect, so the opener must be read first.
   useLayoutEffect(() => {
     if (open) {
       openerRef.current = document.activeElement;
     }
   }, [open]);
 
-  // Passive effect: the card stays mounted while it fades out, and React puts focus back on it at
-  // the end of a commit. Restoring any earlier would be undone.
   React.useEffect(() => {
     if (open) {
       return;
@@ -154,7 +143,6 @@ function Tour(props: ScopedProps<TourProps>) {
     }
   }, [open]);
 
-  // Stay rendered while closed: Tour.Content owns its exit animation and unmounts itself.
   if (!step) {
     return null;
   }
@@ -291,8 +279,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
 
     const context = useTourContext(CONTENT_NAME, __scopeTour);
 
-    // The last target that resolved. A step whose target is briefly missing keeps the card here
-    // instead of unmounting it, so the next target re-anchors the same card.
     const anchorRef = React.useRef<Element | null>(null);
     const cardRef = React.useRef<TourContentElement | null>(null);
 
@@ -308,7 +294,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
     const stepTitle = context.step.title;
     const cardId = contentProps.id ?? context.contentId;
 
-    // A new opening must not start from the previous opening's anchor.
     if (context.open !== wasOpen) {
       setWasOpen(context.open);
 
@@ -321,12 +306,8 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       anchorRef.current = target;
     }
 
-    // Closing keeps the anchor, so the card fades out where it stood. Popover's own Presence
-    // unmounts it once the CSS exit animation ends.
     const open = context.open && anchorRef.current !== null;
 
-    // Popper first parks the card off-screen, then moves it to its real spot. The CSS glide only
-    // switches on after that first placement, or the card would fly in from off-screen.
     React.useEffect(() => {
       if (!open) {
         setPlaced(false);
@@ -339,7 +320,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       return () => cancelAnimationFrame(frame);
     }, [open]);
 
-    // Announce once the card has rendered, so the text is read from the title that is on screen.
     React.useEffect(() => {
       if (!hasTarget) {
         return;
@@ -351,8 +331,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       setAnnouncement(`Step ${index + 1} of ${stepCount}${title ? `: ${title}` : ""}`);
     }, [hasTarget, index, stepCount, stepTitle, titleId]);
 
-    // Focus stays on whatever the user was using. Only a focused element that vanished with the step
-    // (for example a keyed button) sends focus back to the card.
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every step change
     React.useEffect(() => {
       const card = cardRef.current;
@@ -390,7 +368,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       const prevented = event.defaultPrevented;
       const state = focus.current;
 
-      // Radix would focus the first button. The card itself reads as the dialog, so focus that.
       event.preventDefault();
 
       const isFirstFocus = !state.opened;
@@ -505,7 +482,6 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
     const context = useTourContext(SPOTLIGHT_NAME, __scopeTour);
     const currentRect = useRect(context.target);
 
-    // Hold the last rect while the target is briefly missing, like the card does.
     const lastRectRef = React.useRef<DOMRect | null>(null);
 
     if (currentRect) {
