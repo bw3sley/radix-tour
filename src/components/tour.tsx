@@ -12,6 +12,7 @@ import { useRect } from "../hooks/use-rect";
 import { useReducedMotion } from "../hooks/use-reduced-motion";
 import { useStepFade } from "../hooks/use-step-fade";
 import { useTarget } from "../hooks/use-target";
+import { useTourKeys } from "../hooks/use-tour-keys";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
@@ -290,15 +291,6 @@ type TourContentElement = React.ComponentRef<typeof PopoverPrimitive.Content>;
 type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>;
 interface TourContentProps extends PopoverContentProps {}
 
-function isEditable(element: HTMLElement) {
-  return (
-    element.isContentEditable ||
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
-  );
-}
-
 const visuallyHidden: React.CSSProperties = {
   position: "absolute",
   width: 1,
@@ -503,31 +495,17 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       }
     }, [index, focus]);
 
-    React.useEffect(() => {
-      if (!hasTarget) {
-        return;
-      }
-
-      function handleDocumentKeyDown(event: KeyboardEvent) {
-        if (
-          event.key !== "F6" ||
-          event.defaultPrevented ||
-          event.altKey ||
-          event.ctrlKey ||
-          event.metaKey ||
-          event.shiftKey
-        ) {
-          return;
-        }
-
-        event.preventDefault();
-        cardRef.current?.focus({ preventScroll: true });
-      }
-
-      document.addEventListener("keydown", handleDocumentKeyDown);
-
-      return () => document.removeEventListener("keydown", handleDocumentKeyDown);
-    }, [hasTarget]);
+    useTourKeys({
+      enabled: hasTarget,
+      card: cardRef,
+      isFirst: context.isFirst,
+      isLast: context.isLast,
+      stepCount,
+      onNext: context.onNext,
+      onPrevious: context.onPrevious,
+      onGoTo: context.onGoTo,
+      onFocusCard: () => cardRef.current?.focus({ preventScroll: true }),
+    });
 
     React.useEffect(() => {
       if (!target) {
@@ -573,39 +551,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       return null;
     }
 
-    function handleKeyDown(event: React.KeyboardEvent<TourContentElement>) {
-      const { key, target } = event;
-
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
-      }
-
-      // Leave arrows, Home and End to inputs, selects and editors inside the card.
-      if (target instanceof HTMLElement && isEditable(target)) {
-        return;
-      }
-
-      if (key === "ArrowRight" && !context.isLast) {
-        event.preventDefault();
-        context.onNext();
-      }
-
-      if (key === "ArrowLeft" && !context.isFirst) {
-        event.preventDefault();
-        context.onPrevious();
-      }
-
-      if (key === "Home" && !context.isFirst) {
-        event.preventDefault();
-        context.onGoTo(0);
-      }
-
-      if (key === "End" && !context.isLast) {
-        event.preventDefault();
-        context.onGoTo(stepCount - 1);
-      }
-    }
-
     // Enter and exit: opacity plus a small scale from the popover's origin. Never from scale(0).
     // Reduced motion keeps the fade and drops the scale.
     const entered = placed && wantsOpen;
@@ -648,7 +593,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
               onOpenAutoFocus={handleOpenAutoFocus}
               onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
               onBlur={composeEventHandlers(contentProps.onBlur, handleBlur)}
-              onKeyDown={composeEventHandlers(contentProps.onKeyDown, handleKeyDown)}
               onEscapeKeyDown={composeEventHandlers(contentProps.onEscapeKeyDown, context.onClose)}
               onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
                 event.preventDefault(),

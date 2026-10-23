@@ -58,6 +58,7 @@ src/
     use-rect.ts       # track an element's viewport rect
     use-reduced-motion.ts # prefers-reduced-motion as a hook (matchMedia)
     use-step-fade.ts  # fade title and description in when the step changes
+    use-tour-keys.ts  # document key listener: arrows, Home/End, F6 (guards inputs and widgets)
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/

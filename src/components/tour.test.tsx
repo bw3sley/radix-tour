@@ -343,6 +343,71 @@ describe("Tour keyboard navigation", () => {
     expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
   });
 
+  it("moves between steps with the arrow keys when focus is outside the card", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <OpenerHarness />
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+    await startTour(user);
+
+    await user.click(screen.getByRole("button", { name: "Elsewhere" }));
+    expect(getCard()).not.toContainElement(document.activeElement as HTMLElement);
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
+
+    await user.keyboard("{ArrowLeft}");
+
+    expect(await screen.findByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
+  it("leaves arrows to inputs and widgets on the page", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <OpenerHarness />
+        <input aria-label="Page field" />
+        <div role="tablist" aria-label="Page tabs">
+          <button type="button" role="tab" aria-selected="true">
+            One
+          </button>
+        </div>
+      </>,
+    );
+    await startTour(user);
+
+    await user.click(screen.getByRole("textbox", { name: "Page field" }));
+    await user.keyboard("{ArrowRight}");
+
+    screen.getByRole("tab", { name: "One" }).focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
+  it("keeps Home and End inside the card so the page can still scroll", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <OpenerHarness />
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+    await startTour(user);
+
+    await user.click(screen.getByRole("button", { name: "Elsewhere" }));
+    await user.keyboard("{End}");
+
+    expect(screen.getByRole("heading", { name: "First" })).toBeInTheDocument();
+  });
+
   it("ignores arrows with a modifier key", async () => {
     const user = userEvent.setup();
 
@@ -537,7 +602,7 @@ describe("Tour focus management", () => {
     await waitFor(() => expect(getCard()).toHaveFocus());
   });
 
-  it("leaves focus on the opener, and arrows alone do nothing, when auto focus is prevented", async () => {
+  it("leaves focus on the opener when auto focus is prevented, and arrows still change the step", async () => {
     const user = userEvent.setup();
 
     render(<OpenerHarness onOpenAutoFocus={(event) => event.preventDefault()} />);
@@ -545,7 +610,11 @@ describe("Tour focus management", () => {
 
     const opener = screen.getByRole("button", { name: "Start tour" });
 
+    expect(opener).toHaveFocus();
+
     await user.keyboard("{ArrowRight}");
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
     expect(opener).toHaveFocus();
   });
 
