@@ -7,7 +7,7 @@ You build the card from composable parts and style it with your own classes. The
 
 ![A four-step product tour on a bakery order dashboard: the spotlight glides from the sidebar to the search box, the status tabs and the New order button while a dark card explains each one.](https://raw.githubusercontent.com/bw3sley/radix-tour/main/radix-tour.gif)
 
-The tour above is the `Default` story in [`src/components/tour.stories.tsx`](./src/components/tour.stories.tsx).
+The tour above is the `Default` story in [`src/tour.stories.tsx`](./src/tour.stories.tsx).
 
 ## Features
 
@@ -141,27 +141,35 @@ The card and spotlight are separate layers. Give `Tour.Spotlight` a lower `z-ind
 
 | Part | Attributes |
 | --- | --- |
-| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` |
+| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, set by Radix), `data-motion` (`from-start` or `from-end`, absent when `motion={false}`), `data-placed` (once the card has its first position) |
 | `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out |
 
 The spotlight is colored with `currentColor`, so a `text-*` class sets the overlay color and opacity.
 
-### Animate the spotlight
+### Motion
 
-The cut-out is an SVG rect, so you can make it glide between targets with CSS:
+Step changes are animated by default, with nothing to import. The styles are one small CSS file built into the package and added to `<head>` when it loads, the way Sonner does it:
 
-```css
-@media (prefers-reduced-motion: no-preference) {
-  [data-tour-cutout] {
-    transition:
-      x 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      y 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      width 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      height 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-}
-```
+- The card stays mounted and glides to the next target (`transform` only).
+- It scales in from `0.96` and fades in on open, and fades out on close, from the popover's own origin.
+- The spotlight cut-out follows with the same duration and ease.
+- The title and description fade in when the step changes.
+
+Every selector sits in `:where()`, so it has no specificity and your own classes always win. It uses `:has()`, which every current browser supports. Tune it with two CSS variables, set on `:root` or any ancestor:
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `--tour-duration` | `220ms` | Card glide and cut-out. Enter and exit run at 70% of it, the text fade at 55% |
+| `--tour-ease` | `cubic-bezier(0.23, 1, 0.32, 1)` | All of the above |
+
+Pass `motion={false}` to `Tour.Root` to turn all of it off: the parts then carry no `data-motion` attribute, so none of the styles match. With `prefers-reduced-motion: reduce` the card and cut-out stop moving and the card keeps a short opacity fade.
+
+A strict Content-Security-Policy that blocks inline `<style>` tags also blocks this file. Allow it with a nonce or `style-src 'unsafe-inline'`, or pass `motion={false}` and write your own CSS against the `data-*` attributes.
+
+Do not unmount `Tour.Content` yourself between steps (for example by returning `null` from your card component while a step loads): a fresh card has nothing to glide from. `Tour.Content` already waits for the target and keeps the previous position while the next one is missing.
+
+`Tour.Content` sets `data-motion="from-start" | "from-end"`: `from-start` when the last change moved forward, `from-end` when it moved back, so you can style enter and exit by direction.
 
 ### Label the last step
 
@@ -184,6 +192,7 @@ function NextButton() {
 | `steps` | `TourStep[]` | The steps, in order. |
 | `open` | `boolean` | Whether the tour is showing. Opening always starts at the first step. |
 | `onOpenChange` | `(open: boolean) => void` | Called with `false` when the last step is finished or the tour is closed. |
+| `motion` | `boolean` | Animate the card and spotlight between steps and on open and close. Defaults to `true`. See [Motion](#motion). |
 
 ### `TourStep`
 
@@ -200,7 +209,7 @@ function NextButton() {
 
 | Part | Renders | Notes |
 | --- | --- | --- |
-| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts the Popover content props (`side`, `sideOffset`, `collisionPadding`, `onOpenAutoFocus`, ...), which override the step's values. Renders no card until the target exists. Also renders a visually hidden `role="status"` live region (`data-tour-announcer`) that announces "Step N of M: title". |
+| `Tour.Content` | Radix Popover content | Anchored to the current target. Accepts the Popover content props (`side`, `sideOffset`, `collisionPadding`, `onOpenAutoFocus`, ...), which override the step's values. Renders nothing until the target exists, then stays mounted across steps. Also renders a visually hidden `role="status"` live region (`data-tour-announcer`) that announces "Step N of M: title". |
 | `Tour.Arrow` | Radix Popover arrow | Place it inside `Tour.Content`. Fill it with a `fill-*` class. |
 | `Tour.Spotlight` | `svg` | Props: `padding` (px around the target, default 8) and `radius` (corner radius, default 8). |
 | `Tour.Title` | `h2` | Shows the step's `title` unless given children. Labels the card (`aria-labelledby`). |
@@ -220,6 +229,7 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. It thr
 
 - The page stays interactive while the tour is open. Clicking outside the card does not close it.
 - Each step scrolls its target into view.
+- `Tour.Content` stays mounted while the tour is open and fades out on close, so it unmounts shortly after `open` becomes `false`.
 - The spotlight is hidden from assistive technology (`aria-hidden`).
 
 ## Keyboard and screen readers

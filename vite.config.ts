@@ -1,16 +1,20 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import cssInjectedByJs from "vite-plugin-css-injected-by-js";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
   plugins: [
     react(),
+
+    cssInjectedByJs({ styleId: "radix-tour", topExecutionPriority: false }),
+
     dts({
       include: ["src"],
       exclude: [
         "src/**/*.test.tsx",
         "src/**/*.stories.tsx",
-        "src/**/stories/**",
+        "src/crumb-app.tsx",
         "src/test-setup.ts",
       ],
     }),

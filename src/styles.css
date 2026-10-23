@@ -1,0 +1,77 @@
+:where([data-tour-content][data-motion]) {
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+:where([data-tour-content][data-motion][data-state="open"]) {
+  animation: tour-in calc(var(--tour-duration, 220ms) * 0.7)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+:where([data-tour-content][data-motion][data-state="closed"]) {
+  animation: tour-out calc(var(--tour-duration, 220ms) * 0.7)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+:where([data-radix-popper-content-wrapper]:has([data-tour-content][data-motion][data-placed])) {
+  transition: transform var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+:where([data-tour-spotlight][data-motion] [data-tour-cutout]) {
+  transition:
+    x var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    y var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    width var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    height var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+:where([data-tour-title][data-motion], [data-tour-description][data-motion]) {
+  animation: tour-text-in calc(var(--tour-duration, 220ms) * 0.55)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tour-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tour-text-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-radix-popper-content-wrapper]:has([data-tour-content][data-motion][data-placed])),
+  :where([data-tour-spotlight][data-motion] [data-tour-cutout]) {
+    transition: none;
+  }
+
+  :where([data-tour-content][data-motion][data-state="open"]) {
+    animation-name: tour-fade-in;
+  }
+
+  :where([data-tour-content][data-motion][data-state="closed"]) {
+    animation-name: tour-fade-out;
+  }
+
+  @keyframes tour-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes tour-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+}

@@ -1,17 +1,19 @@
 "use client";
 
 import { composeEventHandlers } from "@radix-ui/primitive";
+import { useComposedRefs } from "@radix-ui/react-compose-refs";
 import type { Scope } from "@radix-ui/react-context";
 import { createContextScope } from "@radix-ui/react-context";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Primitive } from "@radix-ui/react-primitive";
 import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
-import { useRect } from "../hooks/use-rect";
-import { useTarget } from "../hooks/use-target";
-import { useTourKeys } from "../hooks/use-tour-keys";
+import { useRect, useTarget, useTourKeys } from "./hooks";
+import "./styles.css";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
+
+type TourDirection = "from-start" | "from-end";
 
 /* -------------------------------------------------------------------------------------------------
  * Tour
@@ -41,6 +43,11 @@ interface TourContextValue {
   step: TourStep;
   isFirst: boolean;
   isLast: boolean;
+  open: boolean;
+
+  motion: boolean;
+
+  direction: TourDirection;
 
   /** The resolved DOM element for the current step, or null while it is still missing. */
   target: Element | null;
@@ -73,27 +80,36 @@ interface TourProps {
   steps: TourStep[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+
+  /** Animate the card and spotlight between steps and on open and close. Defaults to true. */
+  motion?: boolean;
+
   children?: React.ReactNode;
 }
 
 function Tour(props: ScopedProps<TourProps>) {
-  const { __scopeTour, steps, open, onOpenChange, children } = props;
+  const { __scopeTour, steps, open, onOpenChange, motion = true, children } = props;
 
   const [index, setIndex] = React.useState(0);
   const [titleId, setTitleId] = React.useState<string | undefined>();
   const [descriptionId, setDescriptionId] = React.useState<string | undefined>();
+  const [direction, setDirection] = React.useState<TourDirection>("from-start");
+  const [wasOpen, setWasOpen] = React.useState(open);
 
   const contentId = React.useId();
   const focus = React.useRef<FocusState>({ opened: false, within: false });
 
-  const step = steps[index];
-  const target = useTarget(open ? step?.target : undefined);
+  if (open !== wasOpen) {
+    setWasOpen(open);
 
-  React.useEffect(() => {
     if (open) {
       setIndex(0);
+      setDirection("from-start");
     }
-  }, [open]);
+  }
+
+  const step = steps[index];
+  const target = useTarget(open ? step?.target : undefined);
 
   React.useEffect(() => {
     if (!open) {
@@ -105,22 +121,29 @@ function Tour(props: ScopedProps<TourProps>) {
     target?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [target]);
 
-  // Layout effect: the card's autofocus runs in a passive effect, so the opener must be read first.
+  const openerRef = React.useRef<Element | null>(null);
+
   useLayoutEffect(() => {
-    if (!open) {
+    if (open) {
+      openerRef.current = document.activeElement;
+    }
+  }, [open]);
+
+  React.useEffect(() => {
+    if (open) {
       return;
     }
 
-    const previouslyFocused = document.activeElement;
+    const opener = openerRef.current;
 
-    return () => {
-      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
-        previouslyFocused.focus();
-      }
-    };
+    openerRef.current = null;
+
+    if (opener instanceof HTMLElement && opener.isConnected) {
+      opener.focus();
+    }
   }, [open]);
 
-  if (!open || !step) {
+  if (!step) {
     return null;
   }
 
@@ -134,7 +157,22 @@ function Tour(props: ScopedProps<TourProps>) {
       return;
     }
 
+    setDirection("from-start");
     setIndex(index + 1);
+  }
+
+  function handlePrevious() {
+    if (index === 0) {
+      return;
+    }
+
+    setDirection("from-end");
+    setIndex(index - 1);
+  }
+
+  function handleGoTo(next: number) {
+    setDirection(next >= index ? "from-start" : "from-end");
+    setIndex(next);
   }
 
   return (
@@ -145,6 +183,9 @@ function Tour(props: ScopedProps<TourProps>) {
       step={step}
       isFirst={isFirstStep}
       isLast={isLastStep}
+      open={open}
+      motion={motion}
+      direction={direction}
       target={target}
       contentId={contentId}
       titleId={titleId}
@@ -153,8 +194,8 @@ function Tour(props: ScopedProps<TourProps>) {
       onDescriptionIdChange={setDescriptionId}
       focus={focus}
       onNext={handleNext}
-      onPrevious={() => setIndex(Math.max(0, index - 1))}
-      onGoTo={setIndex}
+      onPrevious={handlePrevious}
+      onGoTo={handleGoTo}
       onClose={() => onOpenChange(false)}
     >
       {children}
@@ -227,8 +268,10 @@ function removeDescribedBy(element: Element, id: string) {
 }
 
 /**
- * Popover anchored to the current step's target. Renders no card until the target exists.
- * It also renders a visually hidden live region that announces each step.
+ * Popover anchored to the current step's target. Renders nothing until the target exists, then
+ * stays mounted across steps so the card glides between targets. Do not unmount it yourself
+ * between steps: that removes the glide. It also renders a visually hidden live region that
+ * announces each step.
  */
 const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
   (props: ScopedProps<TourContentProps>, forwardedRef) => {
@@ -239,7 +282,11 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
     const anchorRef = React.useRef<Element | null>(null);
     const cardRef = React.useRef<TourContentElement | null>(null);
 
+    const composedRef = useComposedRefs(forwardedRef, cardRef);
+
     const [announcement, setAnnouncement] = React.useState("");
+    const [wasOpen, setWasOpen] = React.useState(false);
+    const [placed, setPlaced] = React.useState(false);
 
     const { target, index, titleId, focus } = context;
     const hasTarget = target !== null;
@@ -247,20 +294,31 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
     const stepTitle = context.step.title;
     const cardId = contentProps.id ?? context.contentId;
 
-    anchorRef.current = target;
+    if (context.open !== wasOpen) {
+      setWasOpen(context.open);
 
-    const setCardRef = React.useCallback(
-      (node: TourContentElement | null) => {
-        cardRef.current = node;
+      if (context.open) {
+        anchorRef.current = null;
+      }
+    }
 
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          forwardedRef.current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    if (target) {
+      anchorRef.current = target;
+    }
+
+    const open = context.open && anchorRef.current !== null;
+
+    React.useEffect(() => {
+      if (!open) {
+        setPlaced(false);
+
+        return;
+      }
+
+      const frame = requestAnimationFrame(() => setPlaced(true));
+
+      return () => cancelAnimationFrame(frame);
+    }, [open]);
 
     React.useEffect(() => {
       if (!hasTarget) {
@@ -335,40 +393,40 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
 
     return (
       <>
-        <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
-          {announcement}
-        </span>
-
-        {hasTarget ? (
-          <PopoverPrimitive.Root open>
-            <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
-
-            <PopoverPrimitive.Portal>
-              <PopoverPrimitive.Content
-                side={context.step.side ?? "bottom"}
-                align={context.step.align ?? "center"}
-                sideOffset={14}
-                collisionPadding={12}
-                data-step={context.index}
-                aria-labelledby={context.titleId}
-                aria-describedby={context.descriptionId}
-                {...contentProps}
-                id={cardId}
-                ref={setCardRef}
-                onOpenAutoFocus={handleOpenAutoFocus}
-                onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
-                onBlur={composeEventHandlers(contentProps.onBlur, handleBlur)}
-                onEscapeKeyDown={composeEventHandlers(
-                  contentProps.onEscapeKeyDown,
-                  context.onClose,
-                )}
-                onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
-                  event.preventDefault(),
-                )}
-              />
-            </PopoverPrimitive.Portal>
-          </PopoverPrimitive.Root>
+        {open ? (
+          <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
+            {announcement}
+          </span>
         ) : null}
+
+        <PopoverPrimitive.Root open={open}>
+          <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
+
+          <PopoverPrimitive.Portal>
+            <PopoverPrimitive.Content
+              side={context.step.side ?? "bottom"}
+              align={context.step.align ?? "center"}
+              sideOffset={14}
+              collisionPadding={12}
+              data-tour-content=""
+              data-step={context.index}
+              data-motion={context.motion ? context.direction : undefined}
+              data-placed={placed ? "" : undefined}
+              aria-labelledby={context.titleId}
+              aria-describedby={context.descriptionId}
+              {...contentProps}
+              id={cardId}
+              ref={composedRef}
+              onOpenAutoFocus={handleOpenAutoFocus}
+              onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
+              onBlur={composeEventHandlers(contentProps.onBlur, handleBlur)}
+              onEscapeKeyDown={composeEventHandlers(contentProps.onEscapeKeyDown, context.onClose)}
+              onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
+                event.preventDefault(),
+              )}
+            />
+          </PopoverPrimitive.Portal>
+        </PopoverPrimitive.Root>
       </>
     );
   },
@@ -422,7 +480,19 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
     const { __scopeTour, padding = 8, radius = 8, style, ...spotlightProps } = props;
 
     const context = useTourContext(SPOTLIGHT_NAME, __scopeTour);
-    const rect = useRect(context.target);
+    const currentRect = useRect(context.target);
+
+    const lastRectRef = React.useRef<DOMRect | null>(null);
+
+    if (currentRect) {
+      lastRectRef.current = currentRect;
+    }
+
+    if (!context.open) {
+      lastRectRef.current = null;
+    }
+
+    const rect = lastRectRef.current;
 
     const maskId = `tour-mask-${React.useId().replace(/:/g, "")}`;
 
@@ -434,6 +504,7 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
       <Primitive.svg
         aria-hidden
         data-tour-spotlight=""
+        data-motion={context.motion ? "" : undefined}
         {...spotlightProps}
         ref={forwardedRef}
         style={{
@@ -496,7 +567,14 @@ const TourTitle = React.forwardRef<TourTitleElement, TourTitleProps>(
     }, [id, onTitleIdChange]);
 
     return (
-      <Primitive.h2 {...titleProps} id={id} ref={forwardedRef}>
+      <Primitive.h2
+        key={context.step.id}
+        data-tour-title=""
+        data-motion={context.motion ? "" : undefined}
+        {...titleProps}
+        id={id}
+        ref={forwardedRef}
+      >
         {children ?? context.step.title}
       </Primitive.h2>
     );
@@ -532,7 +610,14 @@ const TourDescription = React.forwardRef<TourDescriptionElement, TourDescription
     }, [id, onDescriptionIdChange]);
 
     return (
-      <Primitive.p {...descriptionProps} id={id} ref={forwardedRef}>
+      <Primitive.p
+        key={context.step.id}
+        data-tour-description=""
+        data-motion={context.motion ? "" : undefined}
+        {...descriptionProps}
+        id={id}
+        ref={forwardedRef}
+      >
         {children ?? context.step.description}
       </Primitive.p>
     );

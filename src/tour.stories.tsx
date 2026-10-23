@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { X } from "lucide-react";
 import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import * as Tour from "../index";
-import { CrumbApp } from "./stories/crumb-app";
+import { CrumbApp } from "./crumb-app";
+import * as Tour from "./index";
 
 const steps: Tour.TourStep[] = [
   {
@@ -63,7 +63,7 @@ const tones: Record<Tone, Record<string, string>> = {
 const focusRing = "outline-offset-2 focus-visible:outline-2 focus-visible:outline-amber";
 
 function TourCard({ tone, alwaysShowBack }: { tone: Tone; alwaysShowBack: boolean }) {
-  const { step, isFirst, isLast } = Tour.useTour();
+  const { isFirst, isLast } = Tour.useTour();
 
   const styles = tones[tone];
 
@@ -78,10 +78,8 @@ function TourCard({ tone, alwaysShowBack }: { tone: Tone; alwaysShowBack: boolea
         <X className="size-4" aria-hidden />
       </Tour.Close>
 
-      <div key={step.id} data-tour-body="">
-        <Tour.Title className="pr-8 font-semibold text-base leading-snug" />
-        <Tour.Description className={`mt-1.5 text-sm leading-relaxed ${styles.description}`} />
-      </div>
+      <Tour.Title className="pr-8 font-semibold text-base leading-snug" />
+      <Tour.Description className={`mt-1.5 text-sm leading-relaxed ${styles.description}`} />
 
       <div className="mt-5 flex items-center justify-between">
         <Tour.Progress className={`text-xs tabular-nums ${styles.progress}`} />
@@ -113,6 +111,7 @@ interface CrumbTourProps {
   radius: number;
   startOpen: boolean;
   alwaysShowBack: boolean;
+  motion: boolean;
 }
 
 function CrumbTour({
@@ -122,6 +121,7 @@ function CrumbTour({
   radius,
   startOpen,
   alwaysShowBack,
+  motion,
 }: CrumbTourProps) {
   const [open, setOpen] = React.useState(startOpen);
 
@@ -137,7 +137,7 @@ function CrumbTour({
         </button>
       }
     >
-      <Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
+      <Tour.Root steps={steps} open={open} onOpenChange={setOpen} motion={motion}>
         {spotlight ? (
           <Tour.Spotlight padding={padding} radius={radius} className="z-40 text-ink/55" />
         ) : null}
@@ -158,6 +158,7 @@ const meta = {
     radius: 10,
     startOpen: true,
     alwaysShowBack: false,
+    motion: true,
   },
   argTypes: {
     tone: { control: "inline-radio", options: ["dark", "light"] },
@@ -217,3 +218,6 @@ export const KeyboardFlow: Story = {
     await waitFor(() => expect(card).toHaveAttribute("data-step", "3"));
   },
 };
+
+/** `motion={false}` turns off the glide, the enter and exit, and the text fade: every change is instant. */
+export const WithoutMotion: Story = { args: { motion: false } };

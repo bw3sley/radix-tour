@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
-import * as Tour from "../index";
+import * as Tour from "./index";
 
 const steps: Tour.TourStep[] = [
   { id: "first", target: "#first", title: "First", description: "First step." },
@@ -78,7 +78,8 @@ describe("Tour", () => {
     await user.click(await screen.findByRole("button", { name: "Next" }));
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+
+    await waitFor(() => expect(screen.queryByRole("heading")).not.toBeInTheDocument());
   });
 
   it("closes on Escape and on the close button", async () => {
@@ -795,5 +796,217 @@ describe("Tour key map", () => {
     await user.keyboard("{Enter}");
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+});
+
+function MotionHarness({ motion }: { motion?: boolean }) {
+  const [open, setOpen] = React.useState(true);
+
+  return (
+    <>
+      <button type="button" id="first">
+        first target
+      </button>
+
+      <button type="button" id="second">
+        second target
+      </button>
+
+      <Tour.Root steps={steps} open={open} onOpenChange={setOpen} motion={motion}>
+        <Tour.Spotlight data-testid="spotlight" />
+
+        <Tour.Content data-testid="card">
+          <Tour.Title />
+          <Tour.Description />
+          <Tour.Previous>Back</Tour.Previous>
+          <Tour.Next>Next</Tour.Next>
+          <Tour.Close aria-label="Close tour">x</Tour.Close>
+        </Tour.Content>
+      </Tour.Root>
+    </>
+  );
+}
+
+describe("Tour motion", () => {
+  it("marks the card, spotlight, title and description for the stylesheet", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    expect(card).toHaveAttribute("data-tour-content");
+    expect(card).toHaveAttribute("data-motion", "from-start");
+    expect(card).toHaveAttribute("data-state", "open");
+    expect(await screen.findByTestId("spotlight")).toHaveAttribute("data-motion");
+    expect(screen.getByRole("heading", { name: "First" })).toHaveAttribute("data-tour-title");
+    expect(screen.getByText("First step.")).toHaveAttribute("data-tour-description");
+  });
+
+  it("sets data-placed after the first placement, which switches the glide on", async () => {
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await waitFor(() => expect(card).toHaveAttribute("data-placed"));
+  });
+
+  it("sets data-motion from the direction of the last step change", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(card).toHaveAttribute("data-motion", "from-start");
+    expect(card).toHaveAttribute("data-step", "1");
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(card).toHaveAttribute("data-motion", "from-end");
+    expect(card).toHaveAttribute("data-step", "0");
+  });
+
+  it("keeps the same card mounted across steps", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
+    expect(screen.getByTestId("card")).toBe(card);
+  });
+
+  it("replaces the title and description on each step so the CSS fade plays again", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+
+    const title = await screen.findByRole("heading", { name: "First" });
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    const next = await screen.findByRole("heading", { name: "Second" });
+
+    expect(next).not.toBe(title);
+    expect(title).not.toBeInTheDocument();
+  });
+
+  it("keeps the card mounted while the next target is briefly missing", async () => {
+    const user = userEvent.setup();
+
+    function Missing() {
+      const [showSecond, setShowSecond] = React.useState(false);
+
+      return (
+        <>
+          <button type="button" id="first">
+            first target
+          </button>
+
+          {showSecond ? (
+            <button type="button" id="second">
+              second target
+            </button>
+          ) : null}
+
+          <button type="button" onClick={() => setShowSecond(true)}>
+            Show target
+          </button>
+
+          <Tour.Root steps={steps} open onOpenChange={vi.fn()}>
+            <Tour.Content data-testid="card">
+              <Tour.Title />
+              <Tour.Next>Next</Tour.Next>
+            </Tour.Content>
+          </Tour.Root>
+        </>
+      );
+    }
+
+    render(<Missing />);
+
+    const card = await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(screen.getByTestId("card")).toBe(card);
+
+    await user.click(screen.getByRole("button", { name: "Show target" }));
+
+    expect(await screen.findByRole("heading", { name: "Second" })).toBeInTheDocument();
+    expect(screen.getByTestId("card")).toBe(card);
+  });
+
+  it("removes the card when the tour closes", async () => {
+    const user = userEvent.setup();
+
+    render(<MotionHarness />);
+    await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Close tour" }));
+
+    await waitFor(() => expect(screen.queryByTestId("card")).not.toBeInTheDocument());
+  });
+
+  it("starts from the first step when the tour opens again", async () => {
+    const user = userEvent.setup();
+
+    function Reopen() {
+      const [open, setOpen] = React.useState(true);
+
+      return (
+        <>
+          <button type="button" id="first">
+            first target
+          </button>
+
+          <button type="button" id="second">
+            second target
+          </button>
+
+          <button type="button" onClick={() => setOpen(true)}>
+            Start
+          </button>
+
+          <Tour.Root steps={steps} open={open} onOpenChange={setOpen}>
+            <Tour.Content data-testid="card">
+              <Tour.Title />
+              <Tour.Next>Next</Tour.Next>
+            </Tour.Content>
+          </Tour.Root>
+        </>
+      );
+    }
+
+    render(<Reopen />);
+    await screen.findByTestId("card");
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByRole("heading", { name: "Second" });
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByTestId("card")).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+
+    expect(await screen.findByRole("heading", { name: "First" })).toBeInTheDocument();
+    expect(screen.getByTestId("card")).toHaveAttribute("data-step", "0");
+  });
+
+  describe("with motion={false}", () => {
+    it("leaves data-motion off every part, so the stylesheet does nothing", async () => {
+      render(<MotionHarness motion={false} />);
+
+      const card = await screen.findByTestId("card");
+
+      expect(card).not.toHaveAttribute("data-motion");
+      expect(await screen.findByTestId("spotlight")).not.toHaveAttribute("data-motion");
+      expect(screen.getByRole("heading", { name: "First" })).not.toHaveAttribute("data-motion");
+      expect(screen.getByText("First step.")).not.toHaveAttribute("data-motion");
+    });
   });
 });
