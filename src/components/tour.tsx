@@ -9,6 +9,7 @@ import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect } from "../hooks/use-rect";
 import { useTarget } from "../hooks/use-target";
+import { useTourKeys } from "../hooks/use-tour-keys";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
@@ -44,9 +45,25 @@ interface TourContextValue {
   /** The resolved DOM element for the current step, or null while it is still missing. */
   target: Element | null;
 
+  contentId: string;
+
+  titleId: string | undefined;
+  descriptionId: string | undefined;
+  onTitleIdChange: (id: string | undefined) => void;
+  onDescriptionIdChange: (id: string | undefined) => void;
+
+  focus: React.RefObject<FocusState>;
+
   onNext: () => void;
   onPrevious: () => void;
+  onGoTo: (index: number) => void;
   onClose: () => void;
+}
+
+interface FocusState {
+  opened: boolean;
+
+  within: boolean;
 }
 
 const [createTourContext, createTourScope] = createContextScope(TOUR_NAME);
@@ -63,6 +80,11 @@ function Tour(props: ScopedProps<TourProps>) {
   const { __scopeTour, steps, open, onOpenChange, children } = props;
 
   const [index, setIndex] = React.useState(0);
+  const [titleId, setTitleId] = React.useState<string | undefined>();
+  const [descriptionId, setDescriptionId] = React.useState<string | undefined>();
+
+  const contentId = React.useId();
+  const focus = React.useRef<FocusState>({ opened: false, within: false });
 
   const step = steps[index];
   const target = useTarget(open ? step?.target : undefined);
@@ -70,6 +92,12 @@ function Tour(props: ScopedProps<TourProps>) {
   React.useEffect(() => {
     if (open) {
       setIndex(0);
+    }
+  }, [open]);
+
+  React.useEffect(() => {
+    if (!open) {
+      focus.current = { opened: false, within: false };
     }
   }, [open]);
 
@@ -118,8 +146,15 @@ function Tour(props: ScopedProps<TourProps>) {
       isFirst={isFirstStep}
       isLast={isLastStep}
       target={target}
+      contentId={contentId}
+      titleId={titleId}
+      descriptionId={descriptionId}
+      onTitleIdChange={setTitleId}
+      onDescriptionIdChange={setDescriptionId}
+      focus={focus}
       onNext={handleNext}
       onPrevious={() => setIndex(Math.max(0, index - 1))}
+      onGoTo={setIndex}
       onClose={() => onOpenChange(false)}
     >
       {children}
@@ -159,74 +194,182 @@ type TourContentElement = React.ComponentRef<typeof PopoverPrimitive.Content>;
 type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>;
 interface TourContentProps extends PopoverContentProps {}
 
-function isEditable(element: HTMLElement) {
-  return (
-    element.isContentEditable ||
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
-  );
+const visuallyHidden: React.CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
+
+function addDescribedBy(element: Element, id: string) {
+  const tokens = (element.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
+
+  if (!tokens.includes(id)) {
+    element.setAttribute("aria-describedby", [...tokens, id].join(" "));
+  }
 }
 
-/** Popover anchored to the current step's target. Renders nothing until the target exists. */
+function removeDescribedBy(element: Element, id: string) {
+  const tokens = (element.getAttribute("aria-describedby") ?? "")
+    .split(/\s+/)
+    .filter((token) => token && token !== id);
+
+  if (tokens.length > 0) {
+    element.setAttribute("aria-describedby", tokens.join(" "));
+  } else {
+    element.removeAttribute("aria-describedby");
+  }
+}
+
+/**
+ * Popover anchored to the current step's target. Renders no card until the target exists.
+ * It also renders a visually hidden live region that announces each step.
+ */
 const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
   (props: ScopedProps<TourContentProps>, forwardedRef) => {
-    const { __scopeTour, ...contentProps } = props;
+    const { __scopeTour, onOpenAutoFocus, ...contentProps } = props;
 
     const context = useTourContext(CONTENT_NAME, __scopeTour);
 
     const anchorRef = React.useRef<Element | null>(null);
+    const cardRef = React.useRef<TourContentElement | null>(null);
 
-    anchorRef.current = context.target;
+    const [announcement, setAnnouncement] = React.useState("");
 
-    if (!context.target) {
-      return null;
+    const { target, index, titleId, focus } = context;
+    const hasTarget = target !== null;
+    const stepCount = context.steps.length;
+    const stepTitle = context.step.title;
+    const cardId = contentProps.id ?? context.contentId;
+
+    anchorRef.current = target;
+
+    const setCardRef = React.useCallback(
+      (node: TourContentElement | null) => {
+        cardRef.current = node;
+
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      },
+      [forwardedRef],
+    );
+
+    React.useEffect(() => {
+      if (!hasTarget) {
+        return;
+      }
+
+      const renderedTitle = titleId ? document.getElementById(titleId)?.textContent : null;
+      const title = renderedTitle || (typeof stepTitle === "string" ? stepTitle : "");
+
+      setAnnouncement(`Step ${index + 1} of ${stepCount}${title ? `: ${title}` : ""}`);
+    }, [hasTarget, index, stepCount, stepTitle, titleId]);
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every step change
+    React.useEffect(() => {
+      const card = cardRef.current;
+
+      if (focus.current.within && card && !card.contains(document.activeElement)) {
+        card.focus({ preventScroll: true });
+      }
+    }, [index, focus]);
+
+    useTourKeys({
+      enabled: hasTarget,
+      card: cardRef,
+      isFirst: context.isFirst,
+      isLast: context.isLast,
+      stepCount,
+      onNext: context.onNext,
+      onPrevious: context.onPrevious,
+      onGoTo: context.onGoTo,
+      onFocusCard: () => cardRef.current?.focus({ preventScroll: true }),
+    });
+
+    React.useEffect(() => {
+      if (!target) {
+        return;
+      }
+
+      addDescribedBy(target, cardId);
+
+      return () => removeDescribedBy(target, cardId);
+    }, [target, cardId]);
+
+    function handleOpenAutoFocus(event: Event) {
+      onOpenAutoFocus?.(event);
+
+      const prevented = event.defaultPrevented;
+      const state = focus.current;
+
+      event.preventDefault();
+
+      const isFirstFocus = !state.opened;
+
+      state.opened = true;
+
+      if (isFirstFocus ? !prevented : state.within) {
+        cardRef.current?.focus({ preventScroll: true });
+      }
     }
 
-    function handleKeyDown(event: React.KeyboardEvent<TourContentElement>) {
-      const { key, target } = event;
+    function handleFocus() {
+      focus.current.within = true;
+    }
 
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
-      }
+    function handleBlur(event: React.FocusEvent<TourContentElement>) {
+      const next = event.relatedTarget;
 
-      // Leave arrows to inputs, selects and editors inside the card.
-      if (target instanceof HTMLElement && isEditable(target)) {
-        return;
-      }
-
-      if (key === "ArrowRight" && !context.isLast) {
-        event.preventDefault();
-        context.onNext();
-      }
-
-      if (key === "ArrowLeft" && !context.isFirst) {
-        event.preventDefault();
-        context.onPrevious();
+      if (next instanceof Node && !event.currentTarget.contains(next)) {
+        focus.current.within = false;
       }
     }
 
     return (
-      <PopoverPrimitive.Root open>
-        <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
+      <>
+        <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
+          {announcement}
+        </span>
 
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
-            side={context.step.side ?? "bottom"}
-            align={context.step.align ?? "center"}
-            sideOffset={14}
-            collisionPadding={12}
-            data-step={context.index}
-            {...contentProps}
-            ref={forwardedRef}
-            onKeyDown={composeEventHandlers(contentProps.onKeyDown, handleKeyDown)}
-            onEscapeKeyDown={composeEventHandlers(contentProps.onEscapeKeyDown, context.onClose)}
-            onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
-              event.preventDefault(),
-            )}
-          />
-        </PopoverPrimitive.Portal>
-      </PopoverPrimitive.Root>
+        {hasTarget ? (
+          <PopoverPrimitive.Root open>
+            <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
+
+            <PopoverPrimitive.Portal>
+              <PopoverPrimitive.Content
+                side={context.step.side ?? "bottom"}
+                align={context.step.align ?? "center"}
+                sideOffset={14}
+                collisionPadding={12}
+                data-step={context.index}
+                aria-labelledby={context.titleId}
+                aria-describedby={context.descriptionId}
+                {...contentProps}
+                id={cardId}
+                ref={setCardRef}
+                onOpenAutoFocus={handleOpenAutoFocus}
+                onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
+                onBlur={composeEventHandlers(contentProps.onBlur, handleBlur)}
+                onEscapeKeyDown={composeEventHandlers(
+                  contentProps.onEscapeKeyDown,
+                  context.onClose,
+                )}
+                onInteractOutside={composeEventHandlers(contentProps.onInteractOutside, (event) =>
+                  event.preventDefault(),
+                )}
+              />
+            </PopoverPrimitive.Portal>
+          </PopoverPrimitive.Root>
+        ) : null}
+      </>
     );
   },
 );
@@ -342,8 +485,18 @@ const TourTitle = React.forwardRef<TourTitleElement, TourTitleProps>(
 
     const context = useTourContext(TITLE_NAME, __scopeTour);
 
+    const generatedId = React.useId();
+    const id = titleProps.id ?? generatedId;
+    const { onTitleIdChange } = context;
+
+    useLayoutEffect(() => {
+      onTitleIdChange(id);
+
+      return () => onTitleIdChange(undefined);
+    }, [id, onTitleIdChange]);
+
     return (
-      <Primitive.h2 {...titleProps} ref={forwardedRef}>
+      <Primitive.h2 {...titleProps} id={id} ref={forwardedRef}>
         {children ?? context.step.title}
       </Primitive.h2>
     );
@@ -368,8 +521,18 @@ const TourDescription = React.forwardRef<TourDescriptionElement, TourDescription
 
     const context = useTourContext(DESCRIPTION_NAME, __scopeTour);
 
+    const generatedId = React.useId();
+    const id = descriptionProps.id ?? generatedId;
+    const { onDescriptionIdChange } = context;
+
+    useLayoutEffect(() => {
+      onDescriptionIdChange(id);
+
+      return () => onDescriptionIdChange(undefined);
+    }, [id, onDescriptionIdChange]);
+
     return (
-      <Primitive.p {...descriptionProps} ref={forwardedRef}>
+      <Primitive.p {...descriptionProps} id={id} ref={forwardedRef}>
         {children ?? context.step.description}
       </Primitive.p>
     );
@@ -448,12 +611,20 @@ const TourPrevious = React.forwardRef<TourPreviousElement, TourPreviousProps>(
 
     const context = useTourContext(PREVIOUS_NAME, __scopeTour);
 
+    function handleClick() {
+      if (!context.isFirst) {
+        context.onPrevious();
+      }
+    }
+
     return (
       <Primitive.button
         type="button"
+        aria-disabled={context.isFirst || undefined}
+        data-disabled={context.isFirst ? "" : undefined}
         {...previousProps}
         ref={forwardedRef}
-        onClick={composeEventHandlers(props.onClick, context.onPrevious)}
+        onClick={composeEventHandlers(props.onClick, handleClick)}
       />
     );
   },

@@ -93,7 +93,10 @@ Import the namespace (`import * as Tour from "radix-tour"`). Long names (`TourCo
 - **Next.js and Server Components:** the package keeps `"use client"`, so a Server Component can import it, but `useState`, handlers and `useTour` need a Client Component. Start the file with `"use client"`.
 - **Nothing is invented for you.** There is no `onStepChange`, `onSkip`, "show once" persistence, or `step`/`defaultOpen` prop. To track steps, read `useTour().index` in a child effect. To show a tour once, store a flag in app code. Both are in [references/recipes.md](references/recipes.md). Do not pass props that are not in the [API reference](references/api.md).
 - **Per-step placement is on the step** (`side`, `align`). Props on `Tour.Content` (`side`, `sideOffset`, `collisionPadding`, ...) override them for every step.
-- **Arrow keys** move between steps only while focus is inside the card, and Esc closes it. Do not add a second global key handler for the same keys.
+- **Keys:** arrows change step from anywhere on the page (except in inputs and widgets that use arrows, such as menus and tab lists), Home/End only while focus is inside the card, Esc closes it, and F6 returns focus to the card from anywhere. Do not add a second global key handler for the same keys.
+- **Focus moves into the card when the tour opens.** To keep focus on the opener, pass `onOpenAutoFocus={(e) => e.preventDefault()}` to `Tour.Content`. On a step change focus stays where it is, and on close it returns to the opener.
+- **Always render `Tour.Title`** in the card: it labels the dialog (`aria-labelledby`), and `Tour.Description` describes it. `Tour.Content` also renders a hidden live region announcing "Step N of M: title", so do not add your own.
+- **`Tour.Previous` on the first step is `aria-disabled` + `data-disabled`, not `disabled`:** it stays focusable and clicks do nothing. Style it with `data-[disabled]:` (or hide it with `useTour().isFirst`).
 
 ## Where to read more
 
