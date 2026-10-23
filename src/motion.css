@@ -1,0 +1,93 @@
+/*
+ * radix-tour motion. Injected once when the package loads, so there is nothing to import.
+ *
+ * - Every selector sits in :where(), so nothing here out-ranks your own classes.
+ * - Tune with --tour-duration (step moves, default 220ms) and --tour-ease on any ancestor, e.g. :root.
+ * - Turn it all off with <Tour.Root motion={false}>: the parts then carry no data-motion attribute.
+ * - Only transform and opacity move on the card. The spotlight cut-out animates x, y, width and height.
+ */
+
+/* The card enters and leaves from a small scale, never from nothing. Radix waits for these
+   animations to end before it unmounts the card. */
+:where([data-tour-content][data-motion]) {
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+:where([data-tour-content][data-motion][data-state="open"]) {
+  animation: tour-in calc(var(--tour-duration, 220ms) * 0.7)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+:where([data-tour-content][data-motion][data-state="closed"]) {
+  animation: tour-out calc(var(--tour-duration, 220ms) * 0.7)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+/* The glide. Popper moves the card's wrapper with transform, so a transition there carries the
+   card from one target to the next. It waits for data-placed, set after the first placement. */
+:where([data-radix-popper-content-wrapper]:has([data-tour-content][data-motion][data-placed])) {
+  transition: transform var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+/* The spotlight cut-out follows the card. */
+:where([data-tour-spotlight][data-motion] [data-tour-cutout]) {
+  transition:
+    x var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    y var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    width var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1)),
+    height var(--tour-duration, 220ms) var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+/* Title and description are remounted on each step, so this plays once per step. */
+:where([data-tour-title][data-motion], [data-tour-description][data-motion]) {
+  animation: tour-text-in calc(var(--tour-duration, 220ms) * 0.55)
+    var(--tour-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tour-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tour-text-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: nothing moves or scales. Only short fades stay. */
+@media (prefers-reduced-motion: reduce) {
+  :where([data-radix-popper-content-wrapper]:has([data-tour-content][data-motion][data-placed])),
+  :where([data-tour-spotlight][data-motion] [data-tour-cutout]) {
+    transition: none;
+  }
+
+  :where([data-tour-content][data-motion][data-state="open"]) {
+    animation-name: tour-fade-in;
+  }
+
+  :where([data-tour-content][data-motion][data-state="closed"]) {
+    animation-name: tour-fade-out;
+  }
+
+  @keyframes tour-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes tour-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+}

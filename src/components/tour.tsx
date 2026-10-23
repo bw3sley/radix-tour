@@ -9,49 +9,23 @@ import { Primitive } from "@radix-ui/react-primitive";
 import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect } from "../hooks/use-rect";
-import { useReducedMotion } from "../hooks/use-reduced-motion";
-import { useStepFade } from "../hooks/use-step-fade";
 import { useTarget } from "../hooks/use-target";
 import { useTourKeys } from "../hooks/use-tour-keys";
+import motionCss from "../motion.css?inline";
+
+// Like Sonner: the stylesheet is built into the bundle and added to <head> on import, so there is
+// no CSS file to import. Guarded for the server.
+if (typeof document !== "undefined" && !document.querySelector("style[data-radix-tour]")) {
+  const style = document.createElement("style");
+
+  style.setAttribute("data-radix-tour", "");
+  style.textContent = motionCss;
+  document.head.appendChild(style);
+}
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
-/* Motion defaults. Consumers override the duration and ease with the CSS variables below. */
-const MOVE_DURATION = "220ms";
-const FADE_DURATION = "150ms";
-const DEFAULT_EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
-const ENTER_SCALE = 0.96;
-
-const DURATION_VAR = "--tour-duration";
-const EASE_VAR = "--tour-ease";
-
-const EASE = `var(${EASE_VAR}, ${DEFAULT_EASE})`;
-
-// Safety net: a missing or interrupted transitionend must never leave the card stuck on screen.
-const EXIT_SLACK_MS = 100;
-const DEFAULT_EXIT_MS = 150;
-const PLACEMENT_FALLBACK_MS = 150;
-
-const POPPER_WRAPPER = "[data-radix-popper-content-wrapper]";
-
 type TourDirection = "from-start" | "from-end";
-
-/** Longest duration in a computed `transition-duration` list, in ms. */
-function parseDuration(value: string) {
-  const longest = value
-    .split(",")
-    .map((part) => {
-      const trimmed = part.trim();
-
-      return trimmed.endsWith("ms")
-        ? Number.parseFloat(trimmed)
-        : Number.parseFloat(trimmed) * 1000;
-    })
-    .filter((ms) => Number.isFinite(ms))
-    .reduce((max, ms) => Math.max(max, ms), 0);
-
-  return longest > 0 ? longest : DEFAULT_EXIT_MS;
-}
 
 /* -------------------------------------------------------------------------------------------------
  * Tour
@@ -83,11 +57,8 @@ interface TourContextValue {
   isLast: boolean;
   open: boolean;
 
-  /** Whether step transitions run at all (the `motion` prop). */
+  /** Whether the built-in motion is on (the `motion` prop). */
   motion: boolean;
-
-  /** The user asked for reduced motion: no movement, only short opacity fades. */
-  reducedMotion: boolean;
 
   /** Which way the last step change went: forward is "from-start", back is "from-end". */
   direction: TourDirection;
@@ -145,8 +116,6 @@ function Tour(props: ScopedProps<TourProps>) {
 
   const contentId = React.useId();
   const focus = React.useRef<FocusState>({ opened: false, within: false });
-
-  const reducedMotion = useReducedMotion();
 
   // Restart at the first step on every open. Done while rendering, not in an effect, so the
   // first frame never anchors the card to the previous session's step.
@@ -240,7 +209,6 @@ function Tour(props: ScopedProps<TourProps>) {
       isLast={isLastStep}
       open={open}
       motion={motion}
-      reducedMotion={reducedMotion}
       direction={direction}
       target={target}
       contentId={contentId}
@@ -331,20 +299,20 @@ function removeDescribedBy(element: Element, id: string) {
  */
 const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
   (props: ScopedProps<TourContentProps>, forwardedRef) => {
-    const { __scopeTour, onOpenAutoFocus, style, ...contentProps } = props;
+    const { __scopeTour, onOpenAutoFocus, ...contentProps } = props;
 
     const context = useTourContext(CONTENT_NAME, __scopeTour);
-
-    const [node, setNode] = React.useState<TourContentElement | null>(null);
 
     // The last target that resolved. A step whose target is briefly missing keeps the card here
     // instead of unmounting it, so the next target re-anchors the same card.
     const anchorRef = React.useRef<Element | null>(null);
     const cardRef = React.useRef<TourContentElement | null>(null);
 
-    const composedRef = useComposedRefs(forwardedRef, setNode, cardRef);
+    const composedRef = useComposedRefs(forwardedRef, cardRef);
 
     const [announcement, setAnnouncement] = React.useState("");
+    const [wasOpen, setWasOpen] = React.useState(false);
+    const [placed, setPlaced] = React.useState(false);
 
     const { target, index, titleId, focus } = context;
     const hasTarget = target !== null;
@@ -352,125 +320,36 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
     const stepTitle = context.step.title;
     const cardId = contentProps.id ?? context.contentId;
 
+    // A new opening must not start from the previous opening's anchor.
+    if (context.open !== wasOpen) {
+      setWasOpen(context.open);
+
+      if (context.open) {
+        anchorRef.current = null;
+      }
+    }
+
     if (target) {
       anchorRef.current = target;
     }
 
-    const wantsOpen = context.open && anchorRef.current !== null;
+    // Closing keeps the anchor, so the card fades out where it stood. Popover's own Presence
+    // unmounts it once the CSS exit animation ends.
+    const open = context.open && anchorRef.current !== null;
 
-    // Keep the card mounted while it fades out. Derived during render so there is no frame
-    // between `open` flipping and the exit starting.
-    const [wasOpen, setWasOpen] = React.useState(wantsOpen);
-    const [exiting, setExiting] = React.useState(false);
-
-    if (wantsOpen !== wasOpen) {
-      setWasOpen(wantsOpen);
-      setExiting(!wantsOpen && context.motion);
-    }
-
-    const mounted = wantsOpen || exiting;
-
-    // Popper first places the card off-screen, then at its real spot. Transitioning that first move
-    // would fly the card in from off-screen, so transitions start only after the real placement.
-    const [placed, setPlaced] = React.useState(false);
-
+    // Popper first parks the card off-screen, then moves it to its real spot. The CSS glide only
+    // switches on after that first placement, or the card would fly in from off-screen.
     React.useEffect(() => {
-      if (!mounted) {
-        anchorRef.current = null;
-      }
-    }, [mounted]);
-
-    useLayoutEffect(() => {
-      const wrapper = node?.closest<HTMLElement>(POPPER_WRAPPER);
-
-      if (!wrapper) {
+      if (!open) {
         setPlaced(false);
 
         return;
       }
 
-      let frame = 0;
+      const frame = requestAnimationFrame(() => setPlaced(true));
 
-      function isPlaced() {
-        return !!wrapper && !wrapper.style.transform.includes("-200%");
-      }
-
-      function enable() {
-        observer.disconnect();
-        window.clearTimeout(fallback);
-        frame = requestAnimationFrame(() => setPlaced(true));
-      }
-
-      const observer = new MutationObserver(() => {
-        if (isPlaced()) {
-          enable();
-        }
-      });
-
-      const fallback = window.setTimeout(enable, PLACEMENT_FALLBACK_MS);
-
-      observer.observe(wrapper, { attributes: true, attributeFilter: ["style"] });
-
-      if (isPlaced()) {
-        enable();
-      }
-
-      return () => {
-        observer.disconnect();
-        window.clearTimeout(fallback);
-        cancelAnimationFrame(frame);
-      };
-    }, [node]);
-
-    // The glide: Popper moves the wrapper with `transform`, so a transition there animates the
-    // card between targets. Reduced motion removes the movement.
-    useLayoutEffect(() => {
-      const wrapper = node?.closest<HTMLElement>(POPPER_WRAPPER);
-
-      if (!node || !wrapper || !placed || !context.motion || context.reducedMotion) {
-        return;
-      }
-
-      // The wrapper is portaled above the card, so it cannot inherit variables set on the card.
-      const styles = getComputedStyle(node);
-      const duration = styles.getPropertyValue(DURATION_VAR).trim() || MOVE_DURATION;
-      const ease = styles.getPropertyValue(EASE_VAR).trim() || DEFAULT_EASE;
-
-      wrapper.style.transition = `transform ${duration} ${ease}`;
-
-      return () => {
-        wrapper.style.transition = "";
-      };
-    }, [node, placed, context.motion, context.reducedMotion]);
-
-    // End the exit when the fade finishes, or after a timeout if no transition ever runs.
-    React.useEffect(() => {
-      if (!exiting || !node) {
-        return;
-      }
-
-      const card = node;
-
-      function finish() {
-        setExiting(false);
-      }
-
-      function handleTransitionEnd(event: TransitionEvent) {
-        if (event.target === card) {
-          finish();
-        }
-      }
-
-      const duration = parseDuration(getComputedStyle(card).transitionDuration);
-      const timeout = window.setTimeout(finish, duration + EXIT_SLACK_MS);
-
-      card.addEventListener("transitionend", handleTransitionEnd);
-
-      return () => {
-        window.clearTimeout(timeout);
-        card.removeEventListener("transitionend", handleTransitionEnd);
-      };
-    }, [exiting, node]);
+      return () => cancelAnimationFrame(frame);
+    }, [open]);
 
     // Announce once the card has rendered, so the text is read from the title that is on screen.
     React.useEffect(() => {
@@ -547,32 +426,15 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       }
     }
 
-    if (!mounted) {
-      return null;
-    }
-
-    // Enter and exit: opacity plus a small scale from the popover's origin. Never from scale(0).
-    // Reduced motion keeps the fade and drops the scale.
-    const entered = placed && wantsOpen;
-
-    const motionStyle: React.CSSProperties | undefined = context.motion
-      ? {
-          opacity: entered ? 1 : 0,
-          transform: entered || context.reducedMotion ? "none" : `scale(${ENTER_SCALE})`,
-          transformOrigin: "var(--radix-popover-content-transform-origin)",
-          transition: context.reducedMotion
-            ? `opacity var(${DURATION_VAR}, ${FADE_DURATION}) ${EASE}`
-            : `opacity var(${DURATION_VAR}, ${FADE_DURATION}) ${EASE}, transform var(${DURATION_VAR}, ${FADE_DURATION}) ${EASE}`,
-        }
-      : undefined;
-
     return (
       <>
-        <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
-          {announcement}
-        </span>
+        {open ? (
+          <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
+            {announcement}
+          </span>
+        ) : null}
 
-        <PopoverPrimitive.Root open>
+        <PopoverPrimitive.Root open={open}>
           <PopoverPrimitive.Anchor virtualRef={anchorRef as React.RefObject<Element>} />
 
           <PopoverPrimitive.Portal>
@@ -581,14 +443,14 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
               align={context.step.align ?? "center"}
               sideOffset={14}
               collisionPadding={12}
+              data-tour-content=""
               data-step={context.index}
-              data-state={wantsOpen ? "open" : "closed"}
-              data-motion={context.direction}
+              data-motion={context.motion ? context.direction : undefined}
+              data-placed={placed ? "" : undefined}
               aria-labelledby={context.titleId}
               aria-describedby={context.descriptionId}
               {...contentProps}
               id={cardId}
-              style={{ ...motionStyle, ...style }}
               ref={composedRef}
               onOpenAutoFocus={handleOpenAutoFocus}
               onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
@@ -674,17 +536,11 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
       return null;
     }
 
-    const cutoutTransition =
-      context.motion && !context.reducedMotion
-        ? ["x", "y", "width", "height"]
-            .map((property) => `${property} var(${DURATION_VAR}, ${MOVE_DURATION}) ${EASE}`)
-            .join(", ")
-        : undefined;
-
     return (
       <Primitive.svg
         aria-hidden
         data-tour-spotlight=""
+        data-motion={context.motion ? "" : undefined}
         {...spotlightProps}
         ref={forwardedRef}
         style={{
@@ -708,7 +564,6 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
               height={rect.height + padding * 2}
               rx={radius}
               fill="black"
-              style={{ transition: cutoutTransition }}
             />
           </mask>
         </defs>
@@ -737,11 +592,6 @@ const TourTitle = React.forwardRef<TourTitleElement, TourTitleProps>(
 
     const context = useTourContext(TITLE_NAME, __scopeTour);
 
-    const ref = React.useRef<TourTitleElement>(null);
-    const composedRef = useComposedRefs(forwardedRef, ref);
-
-    useStepFade(ref, context.step.id, context.motion);
-
     const generatedId = React.useId();
     const id = titleProps.id ?? generatedId;
     const { onTitleIdChange } = context;
@@ -753,7 +603,14 @@ const TourTitle = React.forwardRef<TourTitleElement, TourTitleProps>(
     }, [id, onTitleIdChange]);
 
     return (
-      <Primitive.h2 {...titleProps} id={id} ref={composedRef}>
+      <Primitive.h2
+        key={context.step.id}
+        data-tour-title=""
+        data-motion={context.motion ? "" : undefined}
+        {...titleProps}
+        id={id}
+        ref={forwardedRef}
+      >
         {children ?? context.step.title}
       </Primitive.h2>
     );
@@ -778,11 +635,6 @@ const TourDescription = React.forwardRef<TourDescriptionElement, TourDescription
 
     const context = useTourContext(DESCRIPTION_NAME, __scopeTour);
 
-    const ref = React.useRef<TourDescriptionElement>(null);
-    const composedRef = useComposedRefs(forwardedRef, ref);
-
-    useStepFade(ref, context.step.id, context.motion);
-
     const generatedId = React.useId();
     const id = descriptionProps.id ?? generatedId;
     const { onDescriptionIdChange } = context;
@@ -794,7 +646,14 @@ const TourDescription = React.forwardRef<TourDescriptionElement, TourDescription
     }, [id, onDescriptionIdChange]);
 
     return (
-      <Primitive.p {...descriptionProps} id={id} ref={composedRef}>
+      <Primitive.p
+        key={context.step.id}
+        data-tour-description=""
+        data-motion={context.motion ? "" : undefined}
+        {...descriptionProps}
+        id={id}
+        ref={forwardedRef}
+      >
         {children ?? context.step.description}
       </Primitive.p>
     );

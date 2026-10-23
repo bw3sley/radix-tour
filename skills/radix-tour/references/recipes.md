@@ -12,7 +12,7 @@
 
 ## Tune or turn off the motion
 
-The card glide, the enter and exit, the spotlight cut-out and the text fade ship with the library. Nothing to import. Change the timing with CSS variables, in a global stylesheet or on the card:
+The card glide, the enter and exit, the spotlight cut-out and the text fade ship with the library as a small stylesheet it adds to `<head>` itself. Nothing to import. Every selector uses `:where()`, so your classes win. Change the timing with CSS variables, in a global stylesheet or on any ancestor:
 
 ```css
 :root {
@@ -21,9 +21,9 @@ The card glide, the enter and exit, the spotlight cut-out and the text fade ship
 }
 ```
 
-`--tour-duration` defaults to 220ms for moves and 150ms for enter and exit; `--tour-ease` defaults to `cubic-bezier(0.23, 1, 0.32, 1)`. Turn everything off with `<Tour.Root motion={false}>`. `prefers-reduced-motion: reduce` already removes movement and keeps a short fade.
+`--tour-duration` defaults to 220ms (enter and exit run at 70% of it); `--tour-ease` defaults to `cubic-bezier(0.23, 1, 0.32, 1)`. Turn everything off with `<Tour.Root motion={false}>`, which removes `data-motion` from the parts so none of the styles match. `prefers-reduced-motion: reduce` already removes movement and keeps a short fade.
 
-To style enter or exit by direction, use `data-state` and `data-motion` (`from-start` after a forward step, `from-end` after a back step) on `Tour.Content`. Do not unmount `Tour.Content` between steps yourself: a fresh card has nothing to glide from.
+To style enter or exit by direction, use `data-motion` (`from-start` after a forward step, `from-end` after a back step) on `Tour.Content`. Do not unmount `Tour.Content` between steps yourself: a fresh card has nothing to glide from.
 
 ## Show the tour once per user
 

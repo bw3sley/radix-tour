@@ -47,7 +47,7 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 
 | Part | Attributes |
 | --- | --- |
-| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, `closed` while the exit plays), `data-motion` (`from-start` after a forward step, `from-end` after a back step) |
+| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, set by Radix), `data-motion` (`from-start` after a forward step, `from-end` after a back step; absent when `motion={false}`), `data-placed` (after the first placement) |
 | `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out rect |
 
@@ -60,7 +60,7 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 - The current target gets `aria-describedby` pointing at the card, appended to its existing value and removed on step change and close.
 - On close, focus returns to the element that was focused when the tour opened (if still in the page).
 - Each step scrolls its target into view (`block: "center"`, smooth) and the card and spotlight follow it on scroll and resize.
-- Motion is on by default: the card glides between targets (`transform`), scales in from 0.96 and fades on open and close, the spotlight cut-out follows, and the title and description fade on each step. Tune with the CSS variables `--tour-duration` (default 220ms for moves, 150ms for enter and exit) and `--tour-ease` (default `cubic-bezier(0.23, 1, 0.32, 1)`); disable with `<Tour.Root motion={false}>`. `prefers-reduced-motion: reduce` removes movement and keeps a short opacity fade.
+- Motion is on by default and needs no import: a small stylesheet built into the package is added to `<head>` on load. The card glides between targets (`transform`), scales in from 0.96 and fades on open and close, the spotlight cut-out follows, and the title and description fade on each step. Tune with the CSS variables `--tour-duration` (default 220ms) and `--tour-ease` (default `cubic-bezier(0.23, 1, 0.32, 1)`); disable with `<Tour.Root motion={false}>`. Selectors use `:where()` (zero specificity) and `:has()`. A strict CSP can block the injected `<style>`. `prefers-reduced-motion` removes movement and keeps a short fade. Do not unmount `Tour.Content` between steps.
 - `Tour.Content` fades out on close, so it unmounts shortly after `open` becomes `false`.
 - The card is a Radix Popover, exposed to assistive technology as a dialog.
 

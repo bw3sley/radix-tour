@@ -141,7 +141,7 @@ The card and spotlight are separate layers. Give `Tour.Spotlight` a lower `z-ind
 
 | Part | Attributes |
 | --- | --- |
-| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`), `data-motion` (`from-start` or `from-end`) |
+| `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, set by Radix), `data-motion` (`from-start` or `from-end`, absent when `motion={false}`), `data-placed` (once the card has its first position) |
 | `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out |
 
@@ -149,25 +149,27 @@ The spotlight is colored with `currentColor`, so a `text-*` class sets the overl
 
 ### Motion
 
-Step changes are animated by default, with no stylesheet to import:
+Step changes are animated by default, with nothing to import. The styles are one small CSS file built into the package and added to `<head>` when it loads, the way Sonner does it:
 
 - The card stays mounted and glides to the next target (`transform` only).
 - It scales in from `0.96` and fades in on open, and fades out on close, from the popover's own origin.
 - The spotlight cut-out follows with the same duration and ease.
-- The title and description fade in (120ms) when the step changes.
+- The title and description fade in when the step changes.
 
-Tune it with two CSS variables, set on `:root`, `body` or on `Tour.Content` itself (`--tour-duration` and `--tour-ease` are read from the card):
+Every selector sits in `:where()`, so it has no specificity and your own classes always win. It uses `:has()`, which every current browser supports. Tune it with two CSS variables, set on `:root` or any ancestor:
 
 | Variable | Default | Used for |
 | --- | --- | --- |
-| `--tour-duration` | `220ms` for moves, `150ms` for enter and exit | Card glide, cut-out, enter, exit |
+| `--tour-duration` | `220ms` | Card glide and cut-out. Enter and exit run at 70% of it, the text fade at 55% |
 | `--tour-ease` | `cubic-bezier(0.23, 1, 0.32, 1)` | All of the above |
 
-Pass `motion={false}` to `Tour.Root` to turn all of it off. With `prefers-reduced-motion: reduce` the card and cut-out stop moving and the card keeps a short opacity fade.
+Pass `motion={false}` to `Tour.Root` to turn all of it off: the parts then carry no `data-motion` attribute, so none of the styles match. With `prefers-reduced-motion: reduce` the card and cut-out stop moving and the card keeps a short opacity fade.
+
+A strict Content-Security-Policy that blocks inline `<style>` tags also blocks this file. Allow it with a nonce or `style-src 'unsafe-inline'`, or pass `motion={false}` and write your own CSS against the `data-*` attributes.
 
 Do not unmount `Tour.Content` yourself between steps (for example by returning `null` from your card component while a step loads): a fresh card has nothing to glide from. `Tour.Content` already waits for the target and keeps the previous position while the next one is missing.
 
-`Tour.Content` also sets `data-state="open" | "closed"` (it stays `"closed"` while the exit plays) and `data-motion="from-start" | "from-end"`: `from-start` when the last change moved forward, `from-end` when it moved back, so you can style enter and exit by direction.
+`Tour.Content` sets `data-motion="from-start" | "from-end"`: `from-start` when the last change moved forward, `from-end` when it moved back, so you can style enter and exit by direction.
 
 ### Label the last step
 
