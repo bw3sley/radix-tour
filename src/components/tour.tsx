@@ -45,7 +45,6 @@ interface TourContextValue {
   /** The resolved DOM element for the current step, or null while it is still missing. */
   target: Element | null;
 
-  /** Id the card carries, so the target can point at it. */
   contentId: string;
 
   titleId: string | undefined;
@@ -53,7 +52,6 @@ interface TourContextValue {
   onTitleIdChange: (id: string | undefined) => void;
   onDescriptionIdChange: (id: string | undefined) => void;
 
-  /** Where focus is relative to the card. Lives here so it survives the card remounting. */
   focus: React.RefObject<FocusState>;
 
   onNext: () => void;
@@ -63,10 +61,8 @@ interface TourContextValue {
 }
 
 interface FocusState {
-  /** True once the card has taken its first focus for this opening. */
   opened: boolean;
 
-  /** True while focus is inside the card. */
   within: boolean;
 }
 
@@ -266,7 +262,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       [forwardedRef],
     );
 
-    // Announce once the card has rendered, so the text is read from the title that is on screen.
     React.useEffect(() => {
       if (!hasTarget) {
         return;
@@ -278,8 +273,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       setAnnouncement(`Step ${index + 1} of ${stepCount}${title ? `: ${title}` : ""}`);
     }, [hasTarget, index, stepCount, stepTitle, titleId]);
 
-    // Focus stays on whatever the user was using. Only a focused element that vanished with the step
-    // (for example a keyed button) sends focus back to the card.
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs on every step change
     React.useEffect(() => {
       const card = cardRef.current;
@@ -317,7 +310,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       const prevented = event.defaultPrevented;
       const state = focus.current;
 
-      // Radix would focus the first button. The card itself reads as the dialog, so focus that.
       event.preventDefault();
 
       const isFirstFocus = !state.opened;
