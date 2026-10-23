@@ -9,6 +9,7 @@ import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect } from "../hooks/use-rect";
 import { useTarget } from "../hooks/use-target";
+import { useTourKeys } from "../hooks/use-tour-keys";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
@@ -197,36 +198,6 @@ type TourContentElement = React.ComponentRef<typeof PopoverPrimitive.Content>;
 type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>;
 interface TourContentProps extends PopoverContentProps {}
 
-function isEditable(element: HTMLElement) {
-  return (
-    element.isContentEditable ||
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
-  );
-}
-
-const ARROW_KEY_WIDGETS = [
-  "menu",
-  "menubar",
-  "listbox",
-  "tablist",
-  "slider",
-  "radiogroup",
-  "tree",
-  "grid",
-  "combobox",
-  "spinbutton",
-  "textbox",
-]
-  .map((role) => `[role="${role}"]`)
-  .join(",");
-
-/** Inputs, editors and composite widgets use the arrow keys themselves, so the tour leaves them alone. */
-function ownsArrowKeys(element: HTMLElement) {
-  return isEditable(element) || element.closest(ARROW_KEY_WIDGETS) !== null;
-}
-
 const visuallyHidden: React.CSSProperties = {
   position: "absolute",
   width: 1,
@@ -318,88 +289,17 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       }
     }, [index, focus]);
 
-    React.useEffect(() => {
-      if (!hasTarget) {
-        return;
-      }
-
-      function handleDocumentKeyDown(event: KeyboardEvent) {
-        if (
-          event.key !== "F6" ||
-          event.defaultPrevented ||
-          event.altKey ||
-          event.ctrlKey ||
-          event.metaKey ||
-          event.shiftKey
-        ) {
-          return;
-        }
-
-        event.preventDefault();
-        cardRef.current?.focus({ preventScroll: true });
-      }
-
-      document.addEventListener("keydown", handleDocumentKeyDown);
-
-      return () => document.removeEventListener("keydown", handleDocumentKeyDown);
-    }, [hasTarget]);
-
-    const { isFirst, isLast, onNext, onPrevious, onGoTo } = context;
-
-    // Arrows work from anywhere on the page, like most tour libraries, so a click on the page or a
-    // Tab out of the card does not strand the keyboard. Home and End stay inside the card, because
-    // elsewhere they scroll the page. A consumer's `onKeyDown` on the card runs first (React
-    // handlers fire before this document listener), so `preventDefault()` there still cancels.
-    React.useEffect(() => {
-      if (!hasTarget) {
-        return;
-      }
-
-      function handleDocumentKeyDown(event: KeyboardEvent) {
-        const { key, target: eventTarget } = event;
-
-        if (
-          event.defaultPrevented ||
-          event.altKey ||
-          event.ctrlKey ||
-          event.metaKey ||
-          event.shiftKey
-        ) {
-          return;
-        }
-
-        if (eventTarget instanceof HTMLElement && ownsArrowKeys(eventTarget)) {
-          return;
-        }
-
-        const inCard =
-          eventTarget instanceof Node && !!cardRef.current && cardRef.current.contains(eventTarget);
-
-        if (key === "ArrowRight" && !isLast) {
-          event.preventDefault();
-          onNext();
-        }
-
-        if (key === "ArrowLeft" && !isFirst) {
-          event.preventDefault();
-          onPrevious();
-        }
-
-        if (key === "Home" && inCard && !isFirst) {
-          event.preventDefault();
-          onGoTo(0);
-        }
-
-        if (key === "End" && inCard && !isLast) {
-          event.preventDefault();
-          onGoTo(stepCount - 1);
-        }
-      }
-
-      document.addEventListener("keydown", handleDocumentKeyDown);
-
-      return () => document.removeEventListener("keydown", handleDocumentKeyDown);
-    }, [hasTarget, isFirst, isLast, onNext, onPrevious, onGoTo, stepCount]);
+    useTourKeys({
+      enabled: hasTarget,
+      card: cardRef,
+      isFirst: context.isFirst,
+      isLast: context.isLast,
+      stepCount,
+      onNext: context.onNext,
+      onPrevious: context.onPrevious,
+      onGoTo: context.onGoTo,
+      onFocusCard: () => cardRef.current?.focus({ preventScroll: true }),
+    });
 
     React.useEffect(() => {
       if (!target) {

@@ -56,6 +56,7 @@ src/
   hooks/
     use-target.ts     # resolve a selector to an element, waiting for it to mount
     use-rect.ts       # track an element's viewport rect
+    use-tour-keys.ts  # document key listener: arrows, Home/End, F6 (guards inputs and widgets)
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
