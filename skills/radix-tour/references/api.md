@@ -54,7 +54,7 @@ Returns `{ steps, step, index, isFirst, isLast, next, previous, close }`. `index
 
 - The page stays interactive. Clicking outside the card does not close it.
 - Key map: Tab / Shift+Tab move through the card in DOM order (it is portaled to the end of `<body>`); Enter / Space activate the focused button; Esc closes; ArrowRight / ArrowLeft go to the next / previous step; End / Home go to the last / first step; F6 returns focus to the card from anywhere.
-- Arrows, Home and End work only while focus is inside the card. They never close the tour, are ignored when there is no step in that direction, with a modifier key, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `preventDefault()`.
+- Arrows work from anywhere on the page; Home and End only while focus is inside the card (elsewhere they scroll). They never close the tour, are ignored when there is no step in that direction, with a modifier key, in inputs, textareas, selects and editable content, inside widgets that use arrows (`menu`, `menubar`, `listbox`, `tablist`, `slider`, `radiogroup`, `tree`, `grid`, `combobox`, `spinbutton`, `textbox`), and when your `onKeyDown` on `Tour.Content` calls `preventDefault()`.
 - Focus moves to the card when the tour opens unless `onOpenAutoFocus` on `Tour.Content` calls `preventDefault()`. On a step change it moves only if the focused element vanished, otherwise it stays (a user on `Tour.Next` stays there).
 - The current target gets `aria-describedby` pointing at the card, appended to its existing value and removed on step change and close.
 - On close, focus returns to the element that was focused when the tour opened (if still in the page).

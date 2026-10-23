@@ -206,6 +206,27 @@ function isEditable(element: HTMLElement) {
   );
 }
 
+const ARROW_KEY_WIDGETS = [
+  "menu",
+  "menubar",
+  "listbox",
+  "tablist",
+  "slider",
+  "radiogroup",
+  "tree",
+  "grid",
+  "combobox",
+  "spinbutton",
+  "textbox",
+]
+  .map((role) => `[role="${role}"]`)
+  .join(",");
+
+/** Inputs, editors and composite widgets use the arrow keys themselves, so the tour leaves them alone. */
+function ownsArrowKeys(element: HTMLElement) {
+  return isEditable(element) || element.closest(ARROW_KEY_WIDGETS) !== null;
+}
+
 const visuallyHidden: React.CSSProperties = {
   position: "absolute",
   width: 1,
@@ -323,6 +344,63 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       return () => document.removeEventListener("keydown", handleDocumentKeyDown);
     }, [hasTarget]);
 
+    const { isFirst, isLast, onNext, onPrevious, onGoTo } = context;
+
+    // Arrows work from anywhere on the page, like most tour libraries, so a click on the page or a
+    // Tab out of the card does not strand the keyboard. Home and End stay inside the card, because
+    // elsewhere they scroll the page. A consumer's `onKeyDown` on the card runs first (React
+    // handlers fire before this document listener), so `preventDefault()` there still cancels.
+    React.useEffect(() => {
+      if (!hasTarget) {
+        return;
+      }
+
+      function handleDocumentKeyDown(event: KeyboardEvent) {
+        const { key, target: eventTarget } = event;
+
+        if (
+          event.defaultPrevented ||
+          event.altKey ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey
+        ) {
+          return;
+        }
+
+        if (eventTarget instanceof HTMLElement && ownsArrowKeys(eventTarget)) {
+          return;
+        }
+
+        const inCard =
+          eventTarget instanceof Node && !!cardRef.current && cardRef.current.contains(eventTarget);
+
+        if (key === "ArrowRight" && !isLast) {
+          event.preventDefault();
+          onNext();
+        }
+
+        if (key === "ArrowLeft" && !isFirst) {
+          event.preventDefault();
+          onPrevious();
+        }
+
+        if (key === "Home" && inCard && !isFirst) {
+          event.preventDefault();
+          onGoTo(0);
+        }
+
+        if (key === "End" && inCard && !isLast) {
+          event.preventDefault();
+          onGoTo(stepCount - 1);
+        }
+      }
+
+      document.addEventListener("keydown", handleDocumentKeyDown);
+
+      return () => document.removeEventListener("keydown", handleDocumentKeyDown);
+    }, [hasTarget, isFirst, isLast, onNext, onPrevious, onGoTo, stepCount]);
+
     React.useEffect(() => {
       if (!target) {
         return;
@@ -363,39 +441,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
       }
     }
 
-    function handleKeyDown(event: React.KeyboardEvent<TourContentElement>) {
-      const { key, target } = event;
-
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
-      }
-
-      // Leave arrows, Home and End to inputs, selects and editors inside the card.
-      if (target instanceof HTMLElement && isEditable(target)) {
-        return;
-      }
-
-      if (key === "ArrowRight" && !context.isLast) {
-        event.preventDefault();
-        context.onNext();
-      }
-
-      if (key === "ArrowLeft" && !context.isFirst) {
-        event.preventDefault();
-        context.onPrevious();
-      }
-
-      if (key === "Home" && !context.isFirst) {
-        event.preventDefault();
-        context.onGoTo(0);
-      }
-
-      if (key === "End" && !context.isLast) {
-        event.preventDefault();
-        context.onGoTo(stepCount - 1);
-      }
-    }
-
     return (
       <>
         <span role="status" aria-live="polite" data-tour-announcer="" style={visuallyHidden}>
@@ -421,7 +466,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
                 onOpenAutoFocus={handleOpenAutoFocus}
                 onFocus={composeEventHandlers(contentProps.onFocus, handleFocus)}
                 onBlur={composeEventHandlers(contentProps.onBlur, handleBlur)}
-                onKeyDown={composeEventHandlers(contentProps.onKeyDown, handleKeyDown)}
                 onEscapeKeyDown={composeEventHandlers(
                   contentProps.onEscapeKeyDown,
                   context.onClose,

@@ -231,15 +231,15 @@ The card is a non-modal dialog. Focus is not trapped, so <kbd>Tab</kbd> can leav
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Move through the card's controls in DOM order. The card renders in a portal at the end of `<body>`, so Tab from the last control continues into the browser UI and Shift+Tab from the first control goes back to the page. |
 | <kbd>Enter</kbd> / <kbd>Space</kbd> | Activate the focused `Tour.Next`, `Tour.Previous` or `Tour.Close` (they are native buttons). |
 | <kbd>Esc</kbd> | Close the tour. |
-| <kbd>→</kbd> / <kbd>←</kbd> | Next and previous step. |
-| <kbd>Home</kbd> / <kbd>End</kbd> | First and last step. |
+| <kbd>→</kbd> / <kbd>←</kbd> | Next and previous step, from anywhere on the page. |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First and last step, while focus is inside the card. |
 | <kbd>F6</kbd> | Return focus to the card from anywhere on the page. |
 
-<kbd>→</kbd>, <kbd>←</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> work while focus is inside the card. They do nothing when there is no step in that direction (the last step for <kbd>→</kbd> and <kbd>End</kbd>, the first for <kbd>←</kbd> and <kbd>Home</kbd>), so they never close the tour; use `Tour.Next` or <kbd>Esc</kbd> for that. They are ignored with a modifier key held, inside inputs, textareas, selects and editable content, and when your `onKeyDown` on `Tour.Content` calls `event.preventDefault()`. <kbd>F6</kbd> is the "next pane" key in most desktop apps; it works with no modifier and is skipped if another handler already called `preventDefault()` on it.
+<kbd>→</kbd> and <kbd>←</kbd> work wherever focus is, so clicking the page or tabbing out of the card does not stop them. <kbd>Home</kbd> and <kbd>End</kbd> only work while focus is inside the card, because elsewhere they scroll the page. They do nothing when there is no step in that direction (the last step for <kbd>→</kbd> and <kbd>End</kbd>, the first for <kbd>←</kbd> and <kbd>Home</kbd>), so they never close the tour; use `Tour.Next` or <kbd>Esc</kbd> for that. They are ignored with a modifier key held, in inputs, textareas, selects and editable content, inside widgets that use the arrow keys themselves (`role` of `menu`, `menubar`, `listbox`, `tablist`, `slider`, `radiogroup`, `tree`, `grid`, `combobox`, `spinbutton` or `textbox`), and when your `onKeyDown` on `Tour.Content` calls `event.preventDefault()`. <kbd>F6</kbd> is the "next pane" key in most desktop apps; it works with no modifier and is skipped if another handler already called `preventDefault()` on it.
 
 Focus:
 
-- When the tour opens, focus moves to the card (`Tour.Content`, which has `tabindex="-1"`), so a screen reader reads its name and description and the arrow keys work straight away.
+- When the tour opens, focus moves to the card (`Tour.Content`, which has `tabindex="-1"`), so a screen reader reads its name and description and <kbd>Home</kbd> and <kbd>End</kbd> work straight away.
 - On a step change focus stays where it is: if the user pressed `Tour.Next`, they stay on `Tour.Next`. If the focused element disappears with the step, focus moves to the card.
 - To keep focus where it was when the tour opens, call `event.preventDefault()` in `onOpenAutoFocus` on `Tour.Content`. Focus then stays on the opener, and <kbd>F6</kbd> still brings the user into the card:
 
