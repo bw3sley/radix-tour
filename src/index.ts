@@ -6,9 +6,7 @@ export type {
   TourNextProps,
   TourPreviousProps,
   TourProgressProps,
-  TourProps,
   TourSpotlightProps,
-  TourStep,
   TourTitleProps,
 } from "./tour";
 
@@ -36,3 +34,5 @@ export {
   TourTitle,
   useTour,
 } from "./tour";
+
+export type { TourProps, TourStep } from "./types";

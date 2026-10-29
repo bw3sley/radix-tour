@@ -10,6 +10,7 @@ import { useLayoutEffect } from "@radix-ui/react-use-layout-effect";
 import * as React from "react";
 import { useRect, useTarget, useTourKeys } from "./hooks";
 import "./styles.css";
+import type { TourProps, TourStep } from "./types";
 
 type ScopedProps<P> = P & { __scopeTour?: Scope };
 
@@ -20,22 +21,6 @@ type TourDirection = "from-start" | "from-end";
  * -----------------------------------------------------------------------------------------------*/
 
 const TOUR_NAME = "Tour";
-
-interface TourStep {
-  id: string;
-
-  /** CSS selector of the element this step points at. */
-  target: string;
-
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-
-  /** Which side of the target the card sits on. Defaults to "bottom". */
-  side?: "top" | "right" | "bottom" | "left";
-
-  /** How the card aligns along that side. Defaults to "center". */
-  align?: "start" | "center" | "end";
-}
 
 interface TourContextValue {
   steps: TourStep[];
@@ -75,17 +60,6 @@ interface FocusState {
 
 const [createTourContext, createTourScope] = createContextScope(TOUR_NAME);
 const [TourProvider, useTourContext] = createTourContext<TourContextValue>(TOUR_NAME);
-
-interface TourProps {
-  steps: TourStep[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-
-  /** Animate the card and spotlight between steps and on open and close. Defaults to true. */
-  motion?: boolean;
-
-  children?: React.ReactNode;
-}
 
 function Tour(props: ScopedProps<TourProps>) {
   const { __scopeTour, steps, open, onOpenChange, motion = true, children } = props;
@@ -766,9 +740,7 @@ export type {
   TourNextProps,
   TourPreviousProps,
   TourProgressProps,
-  TourProps,
   TourSpotlightProps,
-  TourStep,
   TourTitleProps,
 };
 export {
