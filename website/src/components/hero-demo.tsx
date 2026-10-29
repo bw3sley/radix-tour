@@ -8,6 +8,9 @@ import { usePlayground } from "../hooks/use-playground";
 import { DemoDashboard } from "./demo-dashboard";
 import { HeroCard } from "./hero-card";
 
+const BUTTON =
+  "inline-flex h-10 items-center gap-2 rounded-lg border pr-4 pl-3.5 text-sm font-medium";
+
 export function HeroDemo() {
   const [open, setOpen] = React.useState(false);
   const { registerStart } = usePlayground();
@@ -24,14 +27,18 @@ export function HeroDemo() {
 
   return (
     <>
-      <div className="hero-actions">
-        <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+      <div className="mt-2.5 flex gap-2">
+        <button
+          type="button"
+          className={`${BUTTON} cursor-pointer border-primary bg-primary text-primary-foreground hover:bg-primary/90`}
+          onClick={() => setOpen(true)}
+        >
           <Play size={14} strokeWidth={2} aria-hidden />
           {open ? "Restart tour" : "Start tour"}
         </button>
 
         <a
-          className="btn btn-secondary"
+          className={`${BUTTON} bg-card shadow-xs hover:border-ring`}
           href="https://github.com/bw3sley/radix-tour"
           target="_blank"
           rel="noreferrer"
@@ -43,16 +50,15 @@ export function HeroDemo() {
 
       <DemoDashboard />
 
-      <div className="hint" data-visible={open ? "" : undefined}>
+      <div
+        className="h-4 font-mono text-xs text-subtle-foreground opacity-0 transition-opacity duration-300 data-visible:opacity-100"
+        data-visible={open ? "" : undefined}
+      >
         ← → to move · Esc to close
       </div>
 
       <Tour.Root steps={HERO_STEPS} open={open} onOpenChange={setOpen}>
-        <Tour.Spotlight
-          padding={6}
-          radius={9}
-          style={{ color: "rgba(15,15,20,0.45)", zIndex: 40 }}
-        />
+        <Tour.Spotlight padding={6} radius={9} className="z-40 text-foreground/45" />
 
         <HeroCard />
       </Tour.Root>

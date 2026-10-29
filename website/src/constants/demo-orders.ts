@@ -6,9 +6,8 @@ export const DEMO_ORDERS = [
   { id: "#1038", name: "Pedro Alves", items: "6× Cinnamon roll", status: "Baking" },
 ];
 
-// Status pill colors as [background, text].
-export const STATUS_COLORS: Record<string, [string, string]> = {
-  Baking: ["oklch(0.95 0.05 75)", "oklch(0.45 0.1 65)"],
-  Ready: ["oklch(0.95 0.05 150)", "oklch(0.42 0.1 150)"],
-  Delivered: ["#f1f0ed", "#6b6a66"],
+export const STATUS_STYLES: Record<string, string> = {
+  Baking: "bg-warning text-warning-foreground",
+  Ready: "bg-success text-success-foreground",
+  Delivered: "bg-secondary text-muted-foreground",
 };

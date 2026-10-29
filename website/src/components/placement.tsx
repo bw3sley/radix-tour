@@ -2,10 +2,12 @@
 
 import { Plus } from "lucide-react";
 import * as React from "react";
-import { usePlayground } from "../hooks/use-playground";
-import { arrowBorders, themeVars } from "../lib/theme-styles";
 import { Chip } from "./chip";
 import { CodeBlock } from "./code-block";
+import { InlineCode } from "./inline-code";
+import { PreviewArrow } from "./preview-arrow";
+import { Section } from "./section";
+import { SectionText } from "./section-text";
 
 type Side = "top" | "right" | "bottom" | "left";
 type Align = "start" | "center" | "end";
@@ -13,13 +15,12 @@ type Align = "start" | "center" | "end";
 const SIDES: Side[] = ["top", "right", "bottom", "left"];
 const ALIGNS: Align[] = ["start", "center", "end"];
 
-// Stage geometry: target 120×34 centered at top 133, card 210×104.
-const TARGET = { w: 120, h: 34, top: 133 };
+// Stage geometry: the target is w-30 h-8.5 top-33 (120×34 at 132); the card is 210×104.
+const TARGET = { w: 120, h: 34, top: 132 };
 const CARD = { w: 210, h: 104 };
 const GAP = 12;
 
 export function Placement() {
-  const { theme } = usePlayground();
   const [side, setSide] = React.useState<Side>("bottom");
   const [align, setAlign] = React.useState<Align>("center");
 
@@ -58,22 +59,20 @@ export function Placement() {
   const code = `{\n  id: "new-order",\n  target: "#new-order",\n  side: "${side}",\n  align: "${align}",\n}`;
 
   return (
-    <section className="section">
-      <h2>Placement</h2>
+    <Section title="Placement">
+      <SectionText>
+        Every step picks its own <InlineCode>side</InlineCode> and <InlineCode>align</InlineCode>.
+        Radix handles collisions, so the card flips when it runs out of room.
+      </SectionText>
 
-      <p>
-        Every step picks its own <code>side</code> and <code>align</code>. Radix handles collisions,
-        so the card flips when it runs out of room.
-      </p>
-
-      <div className="chip-row">
+      <div className="flex flex-wrap items-center gap-1.5">
         {SIDES.map((value) => (
           <Chip key={value} active={side === value} onClick={() => setSide(value)}>
             {value}
           </Chip>
         ))}
 
-        <div className="chip-sep" />
+        <div className="mx-1 h-5 w-px bg-border" />
 
         {ALIGNS.map((value) => (
           <Chip key={value} active={align === value} onClick={() => setAlign(value)}>
@@ -82,34 +81,35 @@ export function Placement() {
         ))}
       </div>
 
-      <div className="stage-scroll">
-        <div className="stage stage-dots" style={{ height: 300 }}>
-          <div className="stage-target">
+      <div className="overflow-x-auto rounded-xl">
+        <div className="relative h-75 min-w-150 overflow-hidden rounded-xl border bg-card bg-dots">
+          <div className="absolute top-33 left-1/2 flex h-8.5 w-30 -translate-x-1/2 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground">
             <Plus size={15} strokeWidth={2} aria-hidden />
             New order
           </div>
 
           <div
-            className="card stage-card"
-            style={{ ...themeVars(theme), width: CARD.w, height: CARD.h, top, left }}
+            className="absolute rounded-2xl bg-popover px-3.5 py-3 text-left text-popover-foreground shadow-xl transition-all duration-400 ease-snappy"
+            style={{ width: CARD.w, height: CARD.h, top, left }}
           >
-            <div
-              className="arrow-square"
-              style={{ top: arrowTop, left: arrowLeft, ...arrowBorders(side, theme.line) }}
-            />
+            <PreviewArrow top={arrowTop} left={arrowLeft} />
 
-            <div className="stage-card-title">Add an order</div>
-            <div className="stage-card-desc">Standing orders repeat weekly.</div>
+            <div className="relative text-sm leading-5 font-semibold">Add an order</div>
+            <div className="relative mt-0.5 text-sm leading-5 text-popover-muted">
+              Standing orders repeat weekly.
+            </div>
 
-            <div className="stage-card-foot">
-              <span className="card-progress">4 / 4</span>
-              <span className="card-next stage-done">Done</span>
+            <div className="relative mt-2.5 flex items-center justify-between">
+              <span className="font-mono text-xs font-medium text-popover-muted">4 / 4</span>
+              <span className="flex h-6.5 items-center rounded-md bg-popover-foreground px-2.5 text-xs font-medium text-popover">
+                Done
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       <CodeBlock small code={code} />
-    </section>
+    </Section>
   );
 }
