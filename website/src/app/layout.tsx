@@ -1,13 +1,19 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import "./globals.css";
 
-export const metadata = {
+const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+
+export const metadata: Metadata = {
   title: "radix-tour",
-  description: "An unstyled product tour library for React, built on Radix primitives.",
+  description: "Composable product tours for React, built on Radix primitives.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );

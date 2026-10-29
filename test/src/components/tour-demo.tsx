@@ -10,7 +10,7 @@ const steps: Tour.TourStep[] = [
   { id: "third", target: "#third", title: "Third", description: "Third step." },
 ];
 
-function TourDemo({ motion }: { motion?: boolean }) {
+export function TourDemo({ motion }: { motion?: boolean }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -48,5 +48,3 @@ function TourDemo({ motion }: { motion?: boolean }) {
     </main>
   );
 }
-
-export { TourDemo };
