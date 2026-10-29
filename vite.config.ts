@@ -13,8 +13,6 @@ export default defineConfig({
       include: ["src"],
       exclude: [
         "src/**/*.test.tsx",
-        "src/**/*.stories.tsx",
-        "src/crumb-app.tsx",
         "src/test-setup.ts",
       ],
     }),

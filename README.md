@@ -7,7 +7,7 @@ You build the card from composable parts and style it with your own classes. The
 
 ![A four-step product tour on a bakery order dashboard: the spotlight glides from the sidebar to the search box, the status tabs and the New order button while a dark card explains each one.](https://raw.githubusercontent.com/bw3sley/radix-tour/main/radix-tour.gif)
 
-The tour above is the `Default` story in [`src/tour.stories.tsx`](./src/tour.stories.tsx).
+The tour above is the demo in the [`website/`](./website) workspace.
 
 ## Features
 

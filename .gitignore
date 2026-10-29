@@ -4,7 +4,6 @@ node_modules
 # build output
 dist
 dist-ssr
-storybook-static
 
 # testing
 coverage

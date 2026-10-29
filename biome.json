@@ -8,7 +8,6 @@
       "**",
       "!dist",
       "!coverage",
-      "!storybook-static",
       "!package-lock.json",
       "!**/.next",
       "!**/next-env.d.ts",
