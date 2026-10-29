@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["radix-tour-test", "website"]
+  "ignore": ["test", "website"]
 }

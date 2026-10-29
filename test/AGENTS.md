@@ -1,6 +1,6 @@
 # AGENTS.md
 
-The `test/` workspace (`radix-tour-test`, private, never published): a Next fixture app in `src/` and the Playwright specs in `tests/`. The fixture imports the built library, and this is the only test suite the repo has (there is no unit-test runner). The repo-wide rules are in the root `AGENTS.md`.
+The `test/` workspace (`test`, private, never published): a Next fixture app in `src/` and the Playwright specs in `tests/`. The fixture imports the built library, and this is the only test suite the repo has (there is no unit-test runner). The repo-wide rules are in the root `AGENTS.md`.
 
 ## Running
 
@@ -13,7 +13,7 @@ npx playwright test --project=chromium -g "F6"    # one browser, tests matching 
 npx playwright test --reporter=line               # compact output
 ```
 
-Playwright starts the fixture with `npm run dev -w radix-tour-test` on port 3000. Install the browsers once with `npx playwright install chromium webkit`. The HTML report goes to `playwright-report/` and never opens on its own.
+Playwright starts the fixture with `npm run dev -w test` on port 3000. Install the browsers once with `npx playwright install chromium webkit`. The HTML report goes to `playwright-report/` and never opens on its own.
 
 ## Files (in `tests/`)
 

@@ -46,7 +46,7 @@ src/
   hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
   styles.css          # the library's own CSS (step motion), put in the bundle by vite-plugin-css-injected-by-js and added to <head> when the package loads, like Sonner
   tour.test.tsx       # unit tests
-test/                 # private npm workspace (radix-tour-test): Next app + Playwright specs, never published
+test/                 # private npm workspace (test): Next app + Playwright specs, never published
   src/app/            # pages that render a tour against the built package
   src/components/     # fixture components, one per file (TourDemo, DemoCard, ...)
   src/constants/      # fixture steps
