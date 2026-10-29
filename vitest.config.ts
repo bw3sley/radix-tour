@@ -4,6 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [react()],
   test: {
+    include: ["src/**/*.test.tsx"],
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
     globals: false,
@@ -11,7 +12,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.stories.tsx", "src/**/*.test.tsx"],
+      exclude: ["src/**/*.test.tsx"],
     },
   },
 });
