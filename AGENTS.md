@@ -50,7 +50,7 @@ test/                 # private npm workspace (radix-tour-test): Next app + Play
   src/app/            # pages that render a tour against the built package
   src/components/     # fixture components, one per file (TourDemo, DemoCard, ...)
   src/constants/      # fixture steps
-  tests/              # Playwright specs: tour, keyboard, focus, a11y, motion (+ start-tour helper); see tests/AGENTS.md
+  tests/              # Playwright specs: tour, keyboard, focus, a11y, motion (+ start-tour helper); see test/AGENTS.md
 website/              # private npm workspace (radix-tour-website): the docs site, never published
   src/app/            # layout, page and `globals.css` (Tailwind import and design tokens only)
   src/components/     # one component per file
