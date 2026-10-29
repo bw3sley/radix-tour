@@ -1,8 +1,6 @@
 ---
 name: radix-tour
 description: Adds a product tour (onboarding walkthrough, guided tour, step-by-step coachmarks with a spotlight) to a React or Next.js app using the radix-tour library. Use when the user wants to create, edit, style or debug a product tour, feature introduction or onboarding flow in React, mentions radix-tour or Tour.Root, or needs a tooltip card that points at page elements one step at a time.
-license: MIT
-compatibility: React 18 or 19 project with npm (or another Node package manager). Needs no network access beyond installing the package.
 ---
 
 # radix-tour

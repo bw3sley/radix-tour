@@ -4,6 +4,8 @@
 
 radix-tour is a React library for product tours (onboarding walkthroughs), built on Radix primitives and styled by the consumer with Tailwind. It is published to npm as a package, not an app. Parts are unstyled and expose `data-*` attributes, so consumers control the look with `className`. The Radix code in `packages/react/alert-dialog` (radix-ui/primitives) is the reference for how components are structured and written.
 
+The repo is an npm workspaces monorepo: the library lives at the root, and `test/` (end-to-end app) and `website/` (docs site) are private workspaces that are never published. The npm package contains only `dist/`, plus `README.md`, `LICENSE.md` and `package.json`. Website-specific rules live in `website/AGENTS.md`.
+
 ## Package Manager
 
 **Always use `npm`.** Never use `pnpm` or `yarn`.
@@ -19,11 +21,13 @@ npm test                # Vitest, single run
 npm run test:e2e        # build, then Playwright (Chromium + WebKit) against test/
 npm run test:watch      # Vitest, watch mode
 npm run test:coverage   # Vitest with v8 coverage
+npm run dev -w radix-tour-website    # docs site on port 3001 (run `npm run build` first)
+npm run build -w radix-tour-website  # build the docs site
 npx tsc --noEmit        # typecheck (no npm script)
 npx biome check .       # lint + format check without writing (no npm script)
 ```
 
-Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`, `npm run build-storybook` and `npm run test:e2e`.
+Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`, `npm run build-storybook` and `npm run test:e2e`. When the change touches `website/`, also run `npm run build -w radix-tour-website`.
 
 ## Stack
 
@@ -33,7 +37,8 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), added to `<head>` by the build when the package loads; everything else is unstyled
 - **Testing** - Vitest + Testing Library (jsdom) for units; Playwright (Chromium + WebKit) for end-to-end, in the `test/` workspace
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
-- **Icons** - Lucide React (stories only, dev dependency)
+- **Website** - Next.js (App Router) in `website/`, styled with Tailwind CSS v4 and shadcn-style tokens, Shiki for code blocks; it runs the real `radix-tour` workspace package
+- **Icons** - Lucide React (stories, the test app and the website; dev dependencies)
 - **Linting / formatting** - Biome
 - **Language** - TypeScript 5
 
@@ -58,10 +63,18 @@ src/
 test/                 # private npm workspace (radix-tour-test): Next app + Playwright specs, never published
   src/app/            # pages that render a tour against the built package
   tests/tour.spec.ts  # end-to-end specs
+website/              # private npm workspace (radix-tour-website): the docs site, never published
+  src/app/            # layout, page and `globals.css` (Tailwind import and design tokens only)
+  src/components/     # one component per file
+  src/constants/      # step data, code strings, presets
+  src/contexts/       # the playground context and its provider, in one file
+  src/hooks/          # hooks (usePlayground)
+  src/lib/            # helpers (Shiki theme)
+  postcss.config.mjs  # Tailwind through @tailwindcss/postcss
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
-  ci.yml              # typecheck, Biome, tests and build, plus a Playwright e2e job, on pull requests and main
+  ci.yml              # typecheck, Biome, tests, library and website builds, plus a Playwright e2e job, on pull requests and main
   release.yml         # changesets/action: opens the Version Packages PR, publishes to npm
 .changeset/           # changeset config and pending changesets
 radix-tour.gif        # README demo, recorded from the Default story
@@ -98,6 +111,18 @@ Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Descri
 - The story files and `src/crumb-app.tsx` are excluded from the published type declarations in `vite.config.ts`.
 - When a change alters how the `Default` story looks or behaves, re-record `radix-tour.gif` (repo root) and commit the new file. The README embeds it through its `raw.githubusercontent.com` URL, so the npm page shows it too.
 
+## Website
+
+The rules below apply to `website/` and the `test/` app, not to the library in `src/`. The library keeps the Radix layout above, including its bottom-of-file exports.
+
+- One component per file, kebab-case filename, exported inline: `export function Name() {}`. No `export { Name }` at the bottom. Only Next's `page.tsx` and `layout.tsx` use `export default`.
+- Non-component code goes in role folders under `src/`: `constants/`, `contexts/`, `hooks/`, `lib/`. A React context and its provider share one file; the `use...` hook lives in `hooks/`.
+- Styling is Tailwind only. `src/app/globals.css` holds just `@import "tailwindcss"`, the `:root` design tokens (shadcn names such as `--background`, `--card`, `--popover`, `--primary`, `--border`, `--radius`), the `@theme inline` mapping and a small base layer. Do not write component CSS there.
+- No arbitrary values (`text-[22px]`, `w-[184px]`). Use the nearest Tailwind scale value. Inline `style` is only for computed geometry, such as the placement and spotlight previews.
+- Code blocks use Shiki's `codeToHtml` with the `css-variables` theme; its colors are the `--shiki-*` tokens in `globals.css`.
+- Import the library by its package name (`radix-tour`), never by a path into `../src`. Run `npm run build` first so the workspace link resolves to `dist/`.
+- Lucide has no brand icons, so the GitHub link uses `GitFork`.
+
 ## Path Aliases
 
 None. Use relative imports.
@@ -115,7 +140,8 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 - New behavior needs a test. A change to what users see also needs a story.
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
 - A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome, tests and the build first.
-- Use named exports only. No default exports, except Storybook's `export default meta`.
+- Use named exports only. No default exports, except Storybook's `export default meta` and Next's `page.tsx` and `layout.tsx`.
+- Keep `test/` and `website/` private and listed in `ignore` in `.changeset/config.json`. After changing the package, run `npm pack --dry-run` and check it lists only `dist/`, `README.md`, `LICENSE.md` and `package.json`.
 - Write functions as `function fn() {}` declarations, not `const fn = () => {}`. Applies to
   components, hooks, and standalone utilities. Inline one-off callbacks
   (e.g. `array.map((x) => ...)`, `onClick={() => ...}`) are unaffected — this rule targets named
