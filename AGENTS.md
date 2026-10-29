@@ -126,7 +126,7 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
 - A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome and the build first; CI runs the Playwright suite on every pull request and on `main`.
 - Use named exports only. No default exports, except Next's `page.tsx` and `layout.tsx`.
-- Keep `test/` and `website/` private and listed in `ignore` in `.changeset/config.json`. After changing the package, run `npm pack --dry-run` and check it lists only `dist/`, `README.md`, `LICENSE.md` and `package.json`.
+- Keep `"."` first in `workspaces` in `package.json`. Without it changesets does not see `radix-tour` as a package, and `changeset version` fails with "not in the workspace". - Keep `test/` and `website/` private and listed in `ignore` in `.changeset/config.json`. After changing the package, run `npm pack --dry-run` and check it lists only `dist/`, `README.md`, `LICENSE.md` and `package.json`.
 - Write functions as `function fn() {}` declarations, not `const fn = () => {}`. Applies to
   components, hooks, and standalone utilities. Inline one-off callbacks
   (e.g. `array.map((x) => ...)`, `onClick={() => ...}`) are unaffected — this rule targets named
