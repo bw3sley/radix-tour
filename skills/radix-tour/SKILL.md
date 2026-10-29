@@ -5,7 +5,7 @@ description: Adds a product tour (onboarding walkthrough, guided tour, step-by-s
 
 # radix-tour
 
-radix-tour is an unstyled React tour library built on Radix Popover. You compose a card from parts, point each step at a page element with a CSS selector, and style everything with the host project's own classes. The library ships no CSS.
+radix-tour is an unstyled React tour library built on Radix Popover. You compose a card from parts, point each step at a page element with a CSS selector, and style everything with the host project's own classes. The only CSS it ships is a small step-motion stylesheet, added to `<head>` on import and removable with `motion={false}`.
 
 ## Procedure
 

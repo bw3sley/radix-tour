@@ -11,17 +11,15 @@ The tour above is the demo in the [`website/`](./website) workspace.
 ## Features
 
 - **Composable.** Every part accepts `asChild`, so you can render your own button, heading or card.
-- **Unstyled.** The library ships no CSS. Style parts with `className` and `data-*` attributes.
+- **Unstyled.** The card and spotlight are yours to style with `className` and `data-*` attributes. The only CSS the package ships is a small [step-motion](#motion) stylesheet that you can turn off.
 - **Radix underneath.** Positioning, collision handling and portals come from `@radix-ui/react-popover`.
 - **Waits for targets.** A step whose element is not on the page yet renders once it appears.
 - **Per-step placement.** Each step chooses its own `side` and `align`.
 - **Independent spotlight.** The overlay is a separate part. Leave it out to point at things without dimming the page.
 - **Server Components ready.** The build keeps the `"use client"` directive.
-- **Small.** The library build is about 2 kB gzipped, with React and Radix external to the bundle.
+- **Small.** The library build is about 5 kB gzipped (5.4 kB ESM, 6.0 kB CJS, motion stylesheet included), with React and Radix external to the bundle.
 
 ## Installation
-
-The package has not had its first npm release. After it is published, install it with:
 
 ```bash
 npm install radix-tour
@@ -120,7 +118,7 @@ Import the namespace and compose only the parts you need:
 
 A step has a unique `id` and a `target` CSS selector, such as `#search` or `[data-tour="search"]`. Optional `title` and `description` values appear in the matching parts; passing children to those parts overrides the values. `side` and `align` place the card for that step.
 
-If a target has not mounted, the card waits until a matching element appears. The tour scrolls a resolved target into view and tracks its position while the page scrolls or resizes. Behavior for targets that remain missing or become hidden is tracked in [issue #1](https://github.com/bw3sley/radix-tour/issues/1).
+If a target has not mounted, the card waits until a matching element appears. The tour scrolls a resolved target into view and tracks its position while the page scrolls or resizes. A target that never appears keeps the card and spotlight hidden, and <kbd>Esc</kbd> is the only way out. An element that exists but is hidden (for example `display: none`) still counts as found, so the card has nothing to point at; show the element before the step. Both cases are tracked in [issue #1](https://github.com/bw3sley/radix-tour/issues/1).
 
 The tour is controlled: your component owns `open`, and the library calls `onOpenChange(false)` when it finishes or closes. Set `open` to `true` again to restart it.
 
@@ -143,8 +141,6 @@ The card and spotlight are separate layers. Give `Tour.Spotlight` a lower `z-ind
 | `Tour.Content` | `data-step` (zero-based index), `data-side`, `data-align`, `data-state` (`open` or `closed`, set by Radix), `data-motion` (`from-start` or `from-end`, absent when `motion={false}`), `data-placed` (once the card has its first position) |
 | `Tour.Previous` | `data-disabled` on the first step |
 | `Tour.Spotlight` | `data-tour-spotlight` on the overlay, `data-tour-cutout` on the cut-out |
-
-The spotlight is colored with `currentColor`, so a `text-*` class sets the overlay color and opacity.
 
 ### Motion
 
@@ -279,6 +275,29 @@ npx skills add bw3sley/radix-tour
 
 Or copy the `skills/radix-tour` folder into your agent's skills directory, for example `.claude/skills/` for Claude Code.
 
+## Development
+
+The repo is an npm workspaces monorepo. The library is at the root; `test/` (a Next app with the Playwright specs) and `website/` (the docs site and live demo) are private workspaces that are never published. The npm package contains only `dist/`.
+
+```bash
+npm install                          # install every workspace
+npm run build                        # build the library (ESM, CJS, types)
+npm test                             # build, then run the Playwright specs (Chromium and WebKit)
+npm run dev -w radix-tour-website    # docs site on http://localhost:3001 (build the library first)
+```
+
+Install the Playwright browsers once with `npx playwright install chromium webkit`. Use `npm` only. Changes that affect users need a changeset (`npx changeset`); see [`AGENTS.md`](./AGENTS.md) for the repo conventions.
+
+## Roadmap
+
+Planned or under discussion, none of it promised for a given release:
+
+- A policy for targets that never appear or are hidden, such as a timeout and a callback.
+- Hooks around a step: run code before it shows, and report step changes.
+- A controlled step index, to resume a tour partway.
+- A `labels` prop for the built-in English text (the live-region announcement and `Tour.Progress`).
+- Remembering which tours a user has seen, and tours that span routes.
+
 ## License
 
-License under the [MIT License](./LICENSE.md). If radix-tour helps your project, leave a feedback or ⭐ the repo.
+Licensed under the [MIT License](./LICENSE.md). If radix-tour helps your project, leave feedback or ⭐ the repo.
