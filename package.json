@@ -30,7 +30,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset publish",
-    "prepublishOnly": "tsc --noEmit && biome check . && npm test"
+    "prepublishOnly": "tsc --noEmit && biome check . && npm run build"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

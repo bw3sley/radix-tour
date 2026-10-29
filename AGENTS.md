@@ -111,7 +111,7 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 - Build only what a test or the website demo renders today. Do not add speculative parts or options.
 - New behavior needs a Playwright spec in `test/tests/`. A change to what users see also updates the website demo.
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
-- A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome, tests and the build first.
+- A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome and the build first; CI runs the Playwright suite on every pull request and on `main`.
 - Use named exports only. No default exports, except Next's `page.tsx` and `layout.tsx`.
 - Keep `test/` and `website/` private and listed in `ignore` in `.changeset/config.json`. After changing the package, run `npm pack --dry-run` and check it lists only `dist/`, `README.md`, `LICENSE.md` and `package.json`.
 - Write functions as `function fn() {}` declarations, not `const fn = () => {}`. Applies to
