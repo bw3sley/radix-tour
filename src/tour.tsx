@@ -16,10 +16,6 @@ type ScopedProps<P> = P & { __scopeTour?: Scope };
 
 type TourDirection = "from-start" | "from-end";
 
-/* -------------------------------------------------------------------------------------------------
- * Tour
- * -----------------------------------------------------------------------------------------------*/
-
 const TOUR_NAME = "Tour";
 
 interface TourContextValue {
@@ -179,10 +175,6 @@ function Tour(props: ScopedProps<TourProps>) {
 
 Tour.displayName = TOUR_NAME;
 
-/* -------------------------------------------------------------------------------------------------
- * useTour
- * -----------------------------------------------------------------------------------------------*/
-
 /** Read the tour's state from inside `Tour.Root`, e.g. to label the last step's button "Done". */
 function useTour(scope?: Scope) {
   const context = useTourContext("useTour", scope);
@@ -198,10 +190,6 @@ function useTour(scope?: Scope) {
     close: context.onClose,
   };
 }
-
-/* -------------------------------------------------------------------------------------------------
- * TourContent
- * -----------------------------------------------------------------------------------------------*/
 
 const CONTENT_NAME = "TourContent";
 
@@ -408,10 +396,6 @@ const TourContent = React.forwardRef<TourContentElement, TourContentProps>(
 
 TourContent.displayName = CONTENT_NAME;
 
-/* -------------------------------------------------------------------------------------------------
- * TourArrow
- * -----------------------------------------------------------------------------------------------*/
-
 const ARROW_NAME = "TourArrow";
 
 type TourArrowElement = React.ComponentRef<typeof PopoverPrimitive.Arrow>;
@@ -430,10 +414,6 @@ const TourArrow = React.forwardRef<TourArrowElement, TourArrowProps>(
 );
 
 TourArrow.displayName = ARROW_NAME;
-
-/* -------------------------------------------------------------------------------------------------
- * TourSpotlight
- * -----------------------------------------------------------------------------------------------*/
 
 const SPOTLIGHT_NAME = "TourSpotlight";
 
@@ -514,10 +494,6 @@ const TourSpotlight = React.forwardRef<TourSpotlightElement, TourSpotlightProps>
 
 TourSpotlight.displayName = SPOTLIGHT_NAME;
 
-/* -------------------------------------------------------------------------------------------------
- * TourTitle
- * -----------------------------------------------------------------------------------------------*/
-
 const TITLE_NAME = "TourTitle";
 
 type TourTitleElement = React.ComponentRef<typeof Primitive.h2>;
@@ -556,10 +532,6 @@ const TourTitle = React.forwardRef<TourTitleElement, TourTitleProps>(
 );
 
 TourTitle.displayName = TITLE_NAME;
-
-/* -------------------------------------------------------------------------------------------------
- * TourDescription
- * -----------------------------------------------------------------------------------------------*/
 
 const DESCRIPTION_NAME = "TourDescription";
 
@@ -600,10 +572,6 @@ const TourDescription = React.forwardRef<TourDescriptionElement, TourDescription
 
 TourDescription.displayName = DESCRIPTION_NAME;
 
-/* -------------------------------------------------------------------------------------------------
- * TourProgress
- * -----------------------------------------------------------------------------------------------*/
-
 const PROGRESS_NAME = "TourProgress";
 
 type TourProgressElement = React.ComponentRef<typeof Primitive.span>;
@@ -625,10 +593,6 @@ const TourProgress = React.forwardRef<TourProgressElement, TourProgressProps>(
 );
 
 TourProgress.displayName = PROGRESS_NAME;
-
-/* -------------------------------------------------------------------------------------------------
- * TourNext
- * -----------------------------------------------------------------------------------------------*/
 
 const NEXT_NAME = "TourNext";
 
@@ -654,10 +618,6 @@ const TourNext = React.forwardRef<TourNextElement, TourNextProps>(
 );
 
 TourNext.displayName = NEXT_NAME;
-
-/* -------------------------------------------------------------------------------------------------
- * TourPrevious
- * -----------------------------------------------------------------------------------------------*/
 
 const PREVIOUS_NAME = "TourPrevious";
 
@@ -691,10 +651,6 @@ const TourPrevious = React.forwardRef<TourPreviousElement, TourPreviousProps>(
 
 TourPrevious.displayName = PREVIOUS_NAME;
 
-/* -------------------------------------------------------------------------------------------------
- * TourClose
- * -----------------------------------------------------------------------------------------------*/
-
 const CLOSE_NAME = "TourClose";
 
 type TourCloseElement = React.ComponentRef<typeof Primitive.button>;
@@ -718,8 +674,6 @@ const TourClose = React.forwardRef<TourCloseElement, TourCloseProps>(
 );
 
 TourClose.displayName = CLOSE_NAME;
-
-/* -----------------------------------------------------------------------------------------------*/
 
 const Root = Tour;
 const Content = TourContent;
