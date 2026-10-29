@@ -24,6 +24,7 @@ jobs:
       - run: npx biome check .
       - run: npm test
       - run: npm run build
+      - run: npm run build -w radix-tour-website
 
   e2e:
     runs-on: ubuntu-latest
