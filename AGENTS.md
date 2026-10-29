@@ -16,13 +16,13 @@ npm run build           # library build (ESM + CJS + types) via Vite
 npm run format          # format via Biome
 npm run check:fix       # apply Biome lint fixes, format and organize imports
 npm test                # build, then Playwright (Chromium + WebKit) against test/
-npm run dev -w radix-tour-website    # docs site on port 3001 (run `npm run build` first)
-npm run build -w radix-tour-website  # build the docs site
+npm run dev -w website  # docs site on port 3001 (run `npm run build` first)
+npm run build -w website # build the docs site
 npx tsc --noEmit        # typecheck (no npm script)
 npx biome check .       # lint + format check without writing (no npm script)
 ```
 
-Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`. When the change touches `website/`, also run `npm run build -w radix-tour-website`.
+Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`. When the change touches `website/`, also run `npm run build -w website`.
 
 ## Stack
 
@@ -51,7 +51,7 @@ test/                 # private npm workspace (radix-tour-test): Next app + Play
   src/components/     # fixture components, one per file (TourDemo, DemoCard, ...)
   src/constants/      # fixture steps
   tests/              # Playwright specs: tour, keyboard, focus, a11y, motion (+ start-tour helper); see test/AGENTS.md
-website/              # private npm workspace (radix-tour-website): the docs site, never published
+website/              # private npm workspace (website): the docs site, never published
   src/app/            # layout, page and `globals.css` (Tailwind import and design tokens only)
   src/components/     # one component per file
   src/constants/      # step data, code strings, presets
@@ -79,7 +79,7 @@ CLAUDE.md             # points agents back to this file
 
 Follow Radix's alert-dialog layout in `src/tour.tsx`:
 
-- One file per component. Each part gets a banner comment (`/* --- TourContent --- */`).
+- One file per component.
 - A `const CONTENT_NAME = "TourContent"` per part, used for `displayName` and context errors.
 - Context comes from `createContextScope`. Cross-part props use `ScopedProps<P>`.
 - Parts are `React.forwardRef` components built on `Primitive.*`, so every part supports `asChild`.

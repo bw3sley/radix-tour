@@ -1,15 +1,15 @@
 # AGENTS.md
 
-The docs site for radix-tour: a private npm workspace (`radix-tour-website`) that is never published. The repo-wide rules, commands and the library's own conventions are in the root `AGENTS.md`; this file covers the site only.
+The docs site for radix-tour: a private npm workspace (`website`) that is never published. The repo-wide rules, commands and the library's own conventions are in the root `AGENTS.md`; this file covers the site only.
 
 ## Commands
 
 Run these from the repo root, after `npm run build` so the `radix-tour` workspace link resolves to `dist/`:
 
 ```bash
-npm run dev -w radix-tour-website    # dev server on port 3001
-npm run build -w radix-tour-website  # production build
-npm run start -w radix-tour-website  # serve the production build on port 3001
+npm run dev -w website    # dev server on port 3001
+npm run build -w website  # production build
+npm run start -w website  # serve the production build on port 3001
 ```
 
 Before finishing a change, run `npx tsc --noEmit` in `website/`, `npx biome check website/src` and the production build.

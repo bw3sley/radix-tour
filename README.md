@@ -283,7 +283,7 @@ The repo is an npm workspaces monorepo. The library is at the root; `test/` (a N
 npm install                          # install every workspace
 npm run build                        # build the library (ESM, CJS, types)
 npm test                             # build, then run the Playwright specs (Chromium and WebKit)
-npm run dev -w radix-tour-website    # docs site on http://localhost:3001 (build the library first)
+npm run dev -w website               # docs site on http://localhost:3001 (build the library first)
 ```
 
 Install the Playwright browsers once with `npx playwright install chromium webkit`. Use `npm` only. Changes that affect users need a changeset (`npx changeset`); see [`AGENTS.md`](./AGENTS.md) for the repo conventions.
