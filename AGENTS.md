@@ -64,6 +64,7 @@ skills/
 .github/workflows/
   ci.yml              # typecheck, Biome and the library and website builds, plus a Playwright e2e job, on pull requests and main
   release.yml         # changesets/action: opens the Version Packages PR, publishes to npm
+  dependabot-automerge.yml  # turns on auto-merge for Dependabot PRs; GitHub merges them once the required checks (check, e2e) pass
 .changeset/           # changeset config and pending changesets
 radix-tour.gif        # README demo, recorded from the hero demo on the website
 dist/                 # build output (ESM, CJS, .d.ts)
