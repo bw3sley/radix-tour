@@ -6,9 +6,7 @@ import { usePlayground } from "../hooks/use-playground";
 import { Chip } from "./chip";
 import { CodeBlock } from "./code-block";
 import { ComposePreview } from "./compose-preview";
-import { InlineCode } from "./inline-code";
 import { Section } from "./section";
-import { SectionText } from "./section-text";
 
 const PART_LABELS: Record<PartKey, string> = {
   arrow: "Arrow",
@@ -38,11 +36,10 @@ export function ComposeSection() {
 
   return (
     <Section title="Compose the card">
-      <SectionText>
+      <p>
         The library ships no CSS for the card. Render only the parts you need, style them with{" "}
-        <InlineCode>className</InlineCode>, or hand behavior to your own components with{" "}
-        <InlineCode>asChild</InlineCode>.
-      </SectionText>
+        <code>className</code>, or hand behavior to your own components with <code>asChild</code>.
+      </p>
 
       <div className="flex flex-wrap items-center gap-1.5">
         {PART_KEYS.map((key) => (

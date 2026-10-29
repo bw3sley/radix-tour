@@ -1,7 +1,7 @@
 const LINK =
   "underline decoration-border underline-offset-4 hover:text-accent hover:decoration-current";
 
-export function SiteFooter() {
+export function Footer() {
   return (
     <footer className="flex flex-wrap justify-between gap-3 border-t pt-5 text-sm text-muted-foreground">
       <span>

@@ -4,10 +4,8 @@ import { Plus } from "lucide-react";
 import * as React from "react";
 import { Chip } from "./chip";
 import { CodeBlock } from "./code-block";
-import { InlineCode } from "./inline-code";
 import { PreviewArrow } from "./preview-arrow";
 import { Section } from "./section";
-import { SectionText } from "./section-text";
 
 type Side = "top" | "right" | "bottom" | "left";
 type Align = "start" | "center" | "end";
@@ -60,10 +58,10 @@ export function Placement() {
 
   return (
     <Section title="Placement">
-      <SectionText>
-        Every step picks its own <InlineCode>side</InlineCode> and <InlineCode>align</InlineCode>.
-        Radix handles collisions, so the card flips when it runs out of room.
-      </SectionText>
+      <p>
+        Every step picks its own <code>side</code> and <code>align</code>. Radix handles collisions,
+        so the card flips when it runs out of room.
+      </p>
 
       <div className="flex flex-wrap items-center gap-1.5">
         {SIDES.map((value) => (

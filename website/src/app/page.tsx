@@ -1,10 +1,10 @@
 import { AgentSkillSection } from "../components/agent-skill-section";
 import { BehaviorSection } from "../components/behavior-section";
 import { ComposeSection } from "../components/compose-section";
+import { Footer } from "../components/footer";
 import { HeroDemo } from "../components/hero-demo";
 import { InstallationSection } from "../components/installation-section";
 import { Placement } from "../components/placement";
-import { SiteFooter } from "../components/site-footer";
 import { SpotlightSection } from "../components/spotlight-section";
 import { UsageSection } from "../components/usage-section";
 import { PlaygroundProvider } from "../contexts/playground-context";
@@ -31,7 +31,7 @@ export default function Page() {
         <ComposeSection />
         <BehaviorSection />
         <AgentSkillSection />
-        <SiteFooter />
+        <Footer />
       </main>
     </PlaygroundProvider>
   );

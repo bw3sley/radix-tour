@@ -1,13 +1,10 @@
 import { BEHAVIOR_ROWS } from "../constants/behavior-rows";
 import { Section } from "./section";
-import { SectionText } from "./section-text";
 
 export function BehaviorSection() {
   return (
     <Section title="Behavior">
-      <SectionText>
-        Accessible by default. The card is a Radix Popover, exposed as a dialog.
-      </SectionText>
+      <p>Accessible by default. The card is a Radix Popover, exposed as a dialog.</p>
 
       <div className="flex flex-col rounded-lg border bg-card">
         {BEHAVIOR_ROWS.map((row) => (

@@ -9,10 +9,8 @@ import {
 } from "../constants/spotlight-presets";
 import { Chip } from "./chip";
 import { CodeBlock } from "./code-block";
-import { InlineCode } from "./inline-code";
 import { PreviewArrow } from "./preview-arrow";
 import { Section } from "./section";
-import { SectionText } from "./section-text";
 
 export function SpotlightSection() {
   const [preset, setPreset] = React.useState<SpotlightPresetKey>("default");
@@ -23,10 +21,10 @@ export function SpotlightSection() {
 
   return (
     <Section title="Spotlight">
-      <SectionText>
-        The overlay is its own part. It's colored with <InlineCode>currentColor</InlineCode>, never
-        blocks clicks, and you can leave it out entirely.
-      </SectionText>
+      <p>
+        The overlay is its own part. It's colored with <code>currentColor</code>, never blocks
+        clicks, and you can leave it out entirely.
+      </p>
 
       <div className="flex flex-wrap gap-1.5">
         {SPOTLIGHT_PRESET_KEYS.map((key) => (
