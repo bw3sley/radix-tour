@@ -9,7 +9,8 @@
     "dist"
   ],
   "workspaces": [
-    "test"
+    "test",
+    "website"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

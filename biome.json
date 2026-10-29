@@ -4,7 +4,17 @@
     "enabled": false
   },
   "files": {
-    "includes": ["**", "!dist", "!coverage", "!storybook-static", "!package-lock.json"]
+    "includes": [
+      "**",
+      "!dist",
+      "!coverage",
+      "!storybook-static",
+      "!package-lock.json",
+      "!**/.next",
+      "!**/next-env.d.ts",
+      "!playwright-report",
+      "!test-results"
+    ]
   },
   "formatter": {
     "enabled": true,

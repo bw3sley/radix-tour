@@ -1,8 +1,8 @@
 "use client";
 
 import { X } from "lucide-react";
-import * as React from "react";
 import * as Tour from "radix-tour";
+import * as React from "react";
 
 const steps: Tour.TourStep[] = [
   { id: "first", target: "#first", title: "First", description: "First step." },
