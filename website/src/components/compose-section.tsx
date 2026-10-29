@@ -36,9 +36,10 @@ export function ComposeSection() {
 
   return (
     <Section title="Compose the card">
-      <p>
+      <p className="text-base leading-relaxed text-pretty text-muted-foreground">
         The library ships no CSS for the card. Render only the parts you need, style them with{" "}
-        <code>className</code>, or hand behavior to your own components with <code>asChild</code>.
+        <code className="font-mono text-sm text-foreground">className</code>, or hand behavior to
+        your own components with <code className="font-mono text-sm text-foreground">asChild</code>.
       </p>
 
       <div className="flex flex-wrap items-center gap-1.5">

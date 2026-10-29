@@ -35,7 +35,7 @@ The hero demo and the "Run it on the demo" button use the real `radix-tour` libr
 ## Conventions
 
 - One component per file, kebab-case filename, exported inline: `export function Name() {}`. No `export { Name }` at the bottom. Only `page.tsx` and `layout.tsx` use `export default`, because Next requires it.
-- Use plain tags (`p`, `code`, `h2`, ...) directly; do not wrap a single tag in a component. `Section` styles its direct `<p>` children and the `<code>` inside them with child selectors, so pages just write `<p>` and `<code>`. Name a component for what it is (`Footer`, not `SiteFooter`).
+- Use plain tags (`p`, `code`, `h2`, ...) directly and give each its own Tailwind classes. Do not wrap a single tag in a component, and do not style children through parent selectors such as `[&>p]:`. Name a component for what it is (`Footer`, not `SiteFooter`).
 - Non-component code goes in the role folders above. A context and its provider share one file; the `use...` hook is in `hooks/`.
 - Tailwind only. `globals.css` holds `@import "tailwindcss"`, the `:root` tokens (shadcn names: `--background`, `--foreground`, `--card`, `--popover`, `--primary`, `--secondary`, `--muted`, `--accent`, `--border`, `--radius`), the `@theme inline` mapping and a small base layer. No hand-written component CSS.
 - No arbitrary values (`text-[22px]`, `w-[184px]`): use the nearest Tailwind scale value. Inline `style` is only for computed geometry (placement and spotlight positions).

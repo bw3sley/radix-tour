@@ -21,8 +21,9 @@ export function SpotlightSection() {
 
   return (
     <Section title="Spotlight">
-      <p>
-        The overlay is its own part. It's colored with <code>currentColor</code>, never blocks
+      <p className="text-base leading-relaxed text-pretty text-muted-foreground">
+        The overlay is its own part. It's colored with{" "}
+        <code className="font-mono text-sm text-foreground">currentColor</code>, never blocks
         clicks, and you can leave it out entirely.
       </p>
 

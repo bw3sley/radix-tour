@@ -4,7 +4,9 @@ import { Section } from "./section";
 export function BehaviorSection() {
   return (
     <Section title="Behavior">
-      <p>Accessible by default. The card is a Radix Popover, exposed as a dialog.</p>
+      <p className="text-base leading-relaxed text-pretty text-muted-foreground">
+        Accessible by default. The card is a Radix Popover, exposed as a dialog.
+      </p>
 
       <div className="flex flex-col rounded-lg border bg-card">
         {BEHAVIOR_ROWS.map((row) => (

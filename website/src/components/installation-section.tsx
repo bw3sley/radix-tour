@@ -6,9 +6,10 @@ export function InstallationSection() {
     <Section title="Installation">
       <CodeBlock lang="bash" code="npm install radix-tour" />
 
-      <p>
-        <code>react</code> and <code>react-dom</code> 18 or 19 are peer dependencies. Tailwind is
-        optional.
+      <p className="text-base leading-relaxed text-pretty text-muted-foreground">
+        <code className="font-mono text-sm text-foreground">react</code> and{" "}
+        <code className="font-mono text-sm text-foreground">react-dom</code> 18 or 19 are peer
+        dependencies. Tailwind is optional.
       </p>
     </Section>
   );

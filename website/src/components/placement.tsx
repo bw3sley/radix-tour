@@ -58,8 +58,9 @@ export function Placement() {
 
   return (
     <Section title="Placement">
-      <p>
-        Every step picks its own <code>side</code> and <code>align</code>. Radix handles collisions,
+      <p className="text-base leading-relaxed text-pretty text-muted-foreground">
+        Every step picks its own <code className="font-mono text-sm text-foreground">side</code> and{" "}
+        <code className="font-mono text-sm text-foreground">align</code>. Radix handles collisions,
         so the card flips when it runs out of room.
       </p>
 

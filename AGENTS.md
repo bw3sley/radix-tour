@@ -95,6 +95,19 @@ Public API today: `Tour.Root`, `Content`, `Arrow`, `Spotlight`, `Title`, `Descri
 - The website's hero demo runs the tour against the fictional Crumb dashboard (`website/src/components/demo-dashboard.tsx`). Its tour targets are `#demo-nav`, `#demo-search`, `#demo-tabs` and `#demo-add`. Keep those ids in sync with the steps in `website/src/constants/hero-steps.ts`.
 - When a change alters how the hero demo looks or behaves, re-record `radix-tour.gif` (repo root) and commit the new file. The README embeds it through its `raw.githubusercontent.com` URL, so the npm page shows it too.
 
+## Website
+
+The rules below apply to `website/` and the `test/` app, not to the library in `src/`. The library keeps the Radix layout above, including its bottom-of-file exports. The full list is in `website/AGENTS.md`.
+
+- One component per file, kebab-case filename, exported inline: `export function Name() {}`. No `export { Name }` at the bottom. Only Next's `page.tsx` and `layout.tsx` use `export default`.
+- Use plain tags (`p`, `code`, `h2`, ...) directly and give each its own Tailwind classes. Do not wrap a single tag in a component, and do not style children through parent selectors such as `[&>p]:`.
+- Non-component code goes in role folders under `src/`: `constants/`, `contexts/`, `hooks/`, `lib/`. A React context and its provider share one file; the `use...` hook lives in `hooks/`.
+- Styling is Tailwind only. `src/app/globals.css` holds just `@import "tailwindcss"`, the `:root` design tokens (shadcn names such as `--background`, `--card`, `--popover`, `--primary`, `--border`, `--radius`), the `@theme inline` mapping and a small base layer. Do not write component CSS there.
+- No arbitrary values (`text-[22px]`, `w-[184px]`). Use the nearest Tailwind scale value. Inline `style` is only for computed geometry, such as the placement and spotlight previews.
+- Code blocks use Shiki's `codeToHtml` with the `css-variables` theme; its colors are the `--shiki-*` tokens in `globals.css`.
+- Import the library by its package name (`radix-tour`), never by a path into `../src`. Run `npm run build` first so the workspace link resolves to `dist/`.
+- Lucide has no brand icons, so the GitHub link uses `GitFork`.
+
 ## Path Aliases
 
 None. Use relative imports.
