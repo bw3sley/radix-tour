@@ -21,22 +21,24 @@ export function DemoCard({ bare, keyed, preventAutoFocus, preventKeyDown }: Demo
     >
       {bare ? null : (
         <>
-          <Tour.Title />
-          <Tour.Description />
+          <Tour.Title data-testid="title" />
+          <Tour.Description data-testid="description" />
         </>
       )}
 
       <p data-testid="position">{`${isFirst ? "first" : "later"} ${isLast ? "last" : "more"}`}</p>
 
-      <Tour.Progress />
-      <Tour.Previous>Back</Tour.Previous>
-      <Tour.Next key={keyed ? step.id : undefined}>Next</Tour.Next>
+      <Tour.Progress data-testid="progress" />
+      <Tour.Previous data-testid="back">Back</Tour.Previous>
+      <Tour.Next key={keyed ? step.id : undefined} data-testid="next">
+        Next
+      </Tour.Next>
 
-      <Tour.Close aria-label="Close tour">
+      <Tour.Close aria-label="Close tour" data-testid="close">
         <X />
       </Tour.Close>
 
-      <input aria-label="Note" />
+      <input aria-label="Note" data-testid="note" />
     </Tour.Content>
   );
 }

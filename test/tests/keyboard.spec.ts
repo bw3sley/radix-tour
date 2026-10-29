@@ -6,33 +6,33 @@ test.describe("keyboard navigation", () => {
     await startTour(page);
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await page.keyboard.press("ArrowLeft");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("does nothing past the first or last step", async ({ page }) => {
     await startTour(page);
 
     await page.keyboard.press("ArrowLeft");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
     await expect(page.getByTestId("card")).toBeVisible();
   });
 
   test("leaves arrows to inputs inside the card", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("textbox", { name: "Note" }).focus();
+    await page.getByTestId("note").focus();
     await page.keyboard.press("ArrowRight");
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("moves between steps with the arrow keys when focus is outside the card", async ({
@@ -40,25 +40,25 @@ test.describe("keyboard navigation", () => {
   }) => {
     await startTour(page);
 
-    await page.getByRole("button", { name: "Elsewhere" }).focus();
+    await page.getByTestId("elsewhere").focus();
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await page.keyboard.press("ArrowLeft");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("leaves arrows to inputs and widgets on the page", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("textbox", { name: "Page field" }).focus();
+    await page.getByTestId("page-field").focus();
     await page.keyboard.press("ArrowRight");
 
-    await page.getByRole("tab", { name: "One" }).focus();
+    await page.getByTestId("page-tab").focus();
     await page.keyboard.press("ArrowRight");
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("ignores arrows with a modifier key", async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe("keyboard navigation", () => {
 
     await page.keyboard.press("Alt+ArrowRight");
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("lets a consumer cancel navigation with preventDefault", async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe("keyboard navigation", () => {
 
     await page.keyboard.press("ArrowRight");
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 });
 
@@ -83,38 +83,38 @@ test.describe("key map", () => {
     await startTour(page);
 
     await page.keyboard.press("End");
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
     await expect(page.getByTestId("card")).toBeVisible();
 
     await page.keyboard.press("Home");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("keeps Home and End inside the card so the page can still scroll", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("button", { name: "Elsewhere" }).focus();
+    await page.getByTestId("elsewhere").focus();
     await page.keyboard.press("End");
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("leaves Home and End to inputs and modifier combinations", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("textbox", { name: "Note" }).focus();
+    await page.getByTestId("note").focus();
     await page.keyboard.press("End");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
 
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).focus();
+    await page.getByTestId("next").focus();
     await page.keyboard.press("Control+End");
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("activates Close with Enter", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("button", { name: "Close tour" }).focus();
+    await page.getByTestId("close").focus();
     await page.keyboard.press("Enter");
 
     await expect(page.getByTestId("card")).toBeHidden();

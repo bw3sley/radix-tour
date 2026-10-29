@@ -10,7 +10,7 @@ test.describe("screen reader semantics", () => {
     await expect(status).toHaveAttribute("aria-live", "polite");
     await expect(status).toHaveText("Step 1 of 2: First");
 
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
 
     await expect(status).toHaveText("Step 2 of 2: Second");
   });
@@ -36,7 +36,7 @@ test.describe("screen reader semantics", () => {
   test("keeps Previous focusable but inert on the first step", async ({ page }) => {
     await startTour(page);
 
-    const back = page.getByRole("button", { name: "Back" });
+    const back = page.getByTestId("back");
 
     // Not natively disabled, so it stays focusable; Playwright's toBeEnabled would read aria-disabled.
     await expect(back).not.toHaveAttribute("disabled");
@@ -48,10 +48,10 @@ test.describe("screen reader semantics", () => {
 
     // Playwright treats aria-disabled as not actionable, so force the click to prove it is inert.
     await back.click({ force: true });
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
 
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).click();
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await page.getByTestId("next").click();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await expect(back).not.toHaveAttribute("aria-disabled");
     await expect(back).not.toHaveAttribute("data-disabled");
@@ -60,16 +60,16 @@ test.describe("screen reader semantics", () => {
   test("points the active target at the card and restores it afterwards", async ({ page }) => {
     await startTour(page);
 
-    const first = page.locator("#first");
-    const second = page.locator("#second");
+    const first = page.getByTestId("first-target");
+    const second = page.getByTestId("second-target");
     const cardId = await page.getByRole("dialog").getAttribute("id");
 
     expect(cardId).toBeTruthy();
     await expect(first).toHaveAttribute("aria-describedby", `existing-hint ${cardId}`);
     await expect(second).not.toHaveAttribute("aria-describedby");
 
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).click();
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await page.getByTestId("next").click();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await expect(first).toHaveAttribute("aria-describedby", "existing-hint");
     await expect(second).toHaveAttribute("aria-describedby", cardId as string);

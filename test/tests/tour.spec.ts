@@ -5,21 +5,19 @@ test.describe("tour", () => {
   test("shows the first step anchored to its target", async ({ page }) => {
     await startTour(page);
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
-    await expect(page.getByText("First step.")).toBeVisible();
-    await expect(page.getByText("1 / 2")).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
+    await expect(page.getByTestId("description")).toHaveText("First step.");
+    await expect(page.getByTestId("progress")).toHaveText("1 / 2");
   });
 
   test("moves forward and back between steps", async ({ page }) => {
     await startTour(page);
 
-    const card = page.getByTestId("card");
+    await page.getByTestId("next").click();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
-    await card.getByRole("button", { name: "Next" }).click();
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
-
-    await card.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await page.getByTestId("back").click();
+    await expect(page.getByTestId("title")).toHaveText("First");
   });
 
   test("closes after the last step", async ({ page }) => {
@@ -27,8 +25,8 @@ test.describe("tour", () => {
 
     const card = page.getByTestId("card");
 
-    await card.getByRole("button", { name: "Next" }).click();
-    await card.getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
+    await page.getByTestId("next").click();
 
     await expect(card).toBeHidden();
   });
@@ -42,7 +40,7 @@ test.describe("tour", () => {
     await expect(card).toBeHidden();
 
     await startTour(page);
-    await card.getByRole("button", { name: "Close tour" }).click();
+    await page.getByTestId("close").click();
     await expect(card).toBeHidden();
   });
 
@@ -55,13 +53,13 @@ test.describe("tour", () => {
   test("waits for a target that is not in the DOM yet", async ({ page }) => {
     await page.goto("/?scenario=late");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Start tour" }).click();
+    await page.getByTestId("start").click();
 
     // The target mounts 600ms after the page, so the card has nothing to point at yet.
-    await expect(page.locator("#late")).toHaveCount(0);
+    await expect(page.getByTestId("late-target")).toHaveCount(0);
     await expect(page.getByTestId("card")).toBeHidden();
 
-    await expect(page.getByRole("heading", { name: "Late" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Late");
   });
 
   test("places the card on the side and alignment each step asks for", async ({ page }) => {
@@ -76,11 +74,9 @@ test.describe("tour", () => {
   test("exposes first and last step state through useTour", async ({ page }) => {
     await startTour(page);
 
-    const card = page.getByTestId("card");
-
     await expect(page.getByTestId("position")).toHaveText("first more");
 
-    await card.getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
     await expect(page.getByTestId("position")).toHaveText("later last");
   });
 });

@@ -13,7 +13,7 @@ export function LateTarget({ delay }: { delay: number }) {
   }, [delay]);
 
   return shown ? (
-    <button type="button" id="late">
+    <button type="button" id="late" data-testid="late-target">
       late target
     </button>
   ) : null;

@@ -47,6 +47,7 @@ export function TourDemo({
       {showOpener ? (
         <button
           type="button"
+          data-testid="start"
           onClick={() => {
             setOpen(true);
 
@@ -59,18 +60,18 @@ export function TourDemo({
         </button>
       ) : null}
 
-      <button type="button" id="first" aria-describedby="existing-hint">
+      <button type="button" id="first" aria-describedby="existing-hint" data-testid="first-target">
         first target
       </button>
 
       {showSecond ? (
-        <button type="button" id="second">
+        <button type="button" id="second" data-testid="second-target">
           second target
         </button>
       ) : null}
 
       {hideSecond ? (
-        <button type="button" onClick={() => setShowSecond(true)}>
+        <button type="button" data-testid="show-target" onClick={() => setShowSecond(true)}>
           Show target
         </button>
       ) : null}

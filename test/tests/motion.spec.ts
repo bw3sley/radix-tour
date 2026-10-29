@@ -11,11 +11,8 @@ test.describe("motion", () => {
     await expect(card).toHaveAttribute("data-motion", "from-start");
     await expect(card).toHaveAttribute("data-state", "open");
     await expect(page.getByTestId("spotlight")).toHaveAttribute("data-motion", "");
-    await expect(page.getByRole("heading", { name: "First" })).toHaveAttribute(
-      "data-tour-title",
-      "",
-    );
-    await expect(page.getByText("First step.")).toHaveAttribute("data-tour-description", "");
+    await expect(page.getByTestId("title")).toHaveAttribute("data-tour-title", "");
+    await expect(page.getByTestId("description")).toHaveAttribute("data-tour-description", "");
   });
 
   test("sets data-placed after the first placement, which switches the glide on", async ({
@@ -31,12 +28,12 @@ test.describe("motion", () => {
 
     const card = page.getByTestId("card");
 
-    await card.getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
 
     await expect(card).toHaveAttribute("data-motion", "from-start");
     await expect(card).toHaveAttribute("data-step", "1");
 
-    await card.getByRole("button", { name: "Back" }).click();
+    await page.getByTestId("back").click();
 
     await expect(card).toHaveAttribute("data-motion", "from-end");
     await expect(card).toHaveAttribute("data-step", "0");
@@ -48,9 +45,9 @@ test.describe("motion", () => {
     const card = page.getByTestId("card");
 
     await card.evaluate((element) => element.setAttribute("data-marker", "same"));
-    await card.getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
 
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
     await expect(card).toHaveAttribute("data-marker", "same");
   });
 
@@ -59,12 +56,12 @@ test.describe("motion", () => {
   }) => {
     await startTour(page);
 
-    const title = page.getByRole("heading", { name: "First" });
+    const title = page.getByTestId("title");
 
     await title.evaluate((element) => element.setAttribute("data-marker", "old"));
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
 
-    const next = page.getByRole("heading", { name: "Second" });
+    const next = page.getByTestId("title");
 
     await expect(next).toBeVisible();
     await expect(next).not.toHaveAttribute("data-marker", "old");
@@ -77,20 +74,20 @@ test.describe("motion", () => {
     const card = page.getByTestId("card");
 
     await card.evaluate((element) => element.setAttribute("data-marker", "same"));
-    await card.getByRole("button", { name: "Next" }).click();
+    await page.getByTestId("next").click();
 
     await expect(card).toHaveAttribute("data-marker", "same");
 
-    await page.getByRole("button", { name: "Show target" }).click();
+    await page.getByTestId("show-target").click();
 
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("Second");
     await expect(card).toHaveAttribute("data-marker", "same");
   });
 
   test("removes the card when the tour closes", async ({ page }) => {
     await startTour(page);
 
-    await page.getByRole("button", { name: "Close tour" }).click();
+    await page.getByTestId("close").click();
 
     await expect(page.getByTestId("card")).toHaveCount(0);
   });
@@ -98,15 +95,15 @@ test.describe("motion", () => {
   test("starts from the first step when the tour opens again", async ({ page }) => {
     await startTour(page);
 
-    await page.getByTestId("card").getByRole("button", { name: "Next" }).click();
-    await expect(page.getByRole("heading", { name: "Second" })).toBeVisible();
+    await page.getByTestId("next").click();
+    await expect(page.getByTestId("title")).toHaveText("Second");
 
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("card")).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Start tour" }).click();
+    await page.getByTestId("start").click();
 
-    await expect(page.getByRole("heading", { name: "First" })).toBeVisible();
+    await expect(page.getByTestId("title")).toHaveText("First");
     await expect(page.getByTestId("card")).toHaveAttribute("data-step", "0");
   });
 
@@ -115,7 +112,7 @@ test.describe("motion", () => {
 
     await expect(page.getByTestId("card")).not.toHaveAttribute("data-motion");
     await expect(page.getByTestId("spotlight")).not.toHaveAttribute("data-motion");
-    await expect(page.getByRole("heading", { name: "First" })).not.toHaveAttribute("data-motion");
-    await expect(page.getByText("First step.")).not.toHaveAttribute("data-motion");
+    await expect(page.getByTestId("title")).not.toHaveAttribute("data-motion");
+    await expect(page.getByTestId("description")).not.toHaveAttribute("data-motion");
   });
 });

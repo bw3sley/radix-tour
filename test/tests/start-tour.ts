@@ -5,7 +5,7 @@ import { expect, type Page } from "@playwright/test";
 export async function startTour(page: Page, query = "") {
   await page.goto(`/${query}`);
 
-  const start = page.getByRole("button", { name: "Start tour" });
+  const start = page.getByTestId("start");
   const card = page.getByTestId("card");
 
   await expect(async () => {
