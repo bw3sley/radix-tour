@@ -6,7 +6,6 @@ dist
 dist-ssr
 
 # testing
-coverage
 
 # typescript
 *.tsbuildinfo

@@ -15,17 +15,14 @@ npm install             # install deps
 npm run build           # library build (ESM + CJS + types) via Vite
 npm run format          # format via Biome
 npm run check:fix       # apply Biome lint fixes, format and organize imports
-npm test                # Vitest, single run
-npm run test:e2e        # build, then Playwright (Chromium + WebKit) against test/
-npm run test:watch      # Vitest, watch mode
-npm run test:coverage   # Vitest with v8 coverage
+npm test                # build, then Playwright (Chromium + WebKit) against test/
 npm run dev -w radix-tour-website    # docs site on port 3001 (run `npm run build` first)
 npm run build -w radix-tour-website  # build the docs site
 npx tsc --noEmit        # typecheck (no npm script)
 npx biome check .       # lint + format check without writing (no npm script)
 ```
 
-Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build` and `npm run test:e2e`. When the change touches `website/`, also run `npm run build -w radix-tour-website`.
+Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`. When the change touches `website/`, also run `npm run build -w radix-tour-website`.
 
 ## Stack
 
@@ -33,7 +30,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
 - **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
 - **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), added to `<head>` by the build when the package loads; everything else is unstyled
-- **Testing** - Vitest + Testing Library (jsdom) for units; Playwright (Chromium + WebKit) for end-to-end, in the `test/` workspace
+- **Testing** - Playwright (Chromium + WebKit) in the `test/` workspace; there is no unit-test runner
 - **Website** - Next.js (App Router) in `website/`, styled with Tailwind CSS v4 and shadcn-style tokens, Shiki for code blocks; it runs the real `radix-tour` workspace package
 - **Icons** - Lucide React (the test app and the website; dev dependencies)
 - **Linting / formatting** - Biome
@@ -49,10 +46,11 @@ src/
   hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
   styles.css          # the library's own CSS (step motion), put in the bundle by vite-plugin-css-injected-by-js and added to <head> when the package loads, like Sonner
   tour.test.tsx       # unit tests
-  test-setup.ts       # Vitest setup (jest-dom, jsdom stubs)
 test/                 # private npm workspace (radix-tour-test): Next app + Playwright specs, never published
   src/app/            # pages that render a tour against the built package
-  tests/tour.spec.ts  # end-to-end specs
+  src/components/     # fixture components, one per file (TourDemo, DemoCard, ...)
+  src/constants/      # fixture steps
+  tests/              # Playwright specs: tour, keyboard, focus, a11y, motion (+ start-tour helper)
 website/              # private npm workspace (radix-tour-website): the docs site, never published
   src/app/            # layout, page and `globals.css` (Tailwind import and design tokens only)
   src/components/     # one component per file
@@ -64,14 +62,13 @@ website/              # private npm workspace (radix-tour-website): the docs sit
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
-  ci.yml              # typecheck, Biome, tests, library and website builds, plus a Playwright e2e job, on pull requests and main
+  ci.yml              # typecheck, Biome and the library and website builds, plus a Playwright e2e job, on pull requests and main
   release.yml         # changesets/action: opens the Version Packages PR, publishes to npm
 .changeset/           # changeset config and pending changesets
 radix-tour.gif        # README demo, recorded from the hero demo on the website
 dist/                 # build output (ESM, CJS, .d.ts)
 playwright.config.ts  # e2e config; starts the test app, needs `npm run build` first
 vite.config.ts        # library build; re-adds the "use client" banner
-vitest.config.ts      # test config (jsdom, setup file, coverage)
 biome.json            # lint and format rules, including useBlockStatements
 README.md             # public docs: install, quick start, API reference, roadmap
 LICENSE.md            # MIT
@@ -112,7 +109,7 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 
 - Keep `src/` flat: the parts in `src/tour.tsx`, shared hooks in `src/hooks.ts`. Add a file, not a folder, when something new needs its own module.
 - Build only what a test or the website demo renders today. Do not add speculative parts or options.
-- New behavior needs a test. A change to what users see also needs a Playwright spec in `test/` or an update to the website demo.
+- New behavior needs a Playwright spec in `test/tests/`. A change to what users see also updates the website demo.
 - A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
 - A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome, tests and the build first.
 - Use named exports only. No default exports, except Next's `page.tsx` and `layout.tsx`.

@@ -11,10 +11,6 @@ export default defineConfig({
 
     dts({
       include: ["src"],
-      exclude: [
-        "src/**/*.test.tsx",
-        "src/test-setup.ts",
-      ],
     }),
   ],
   build: {
