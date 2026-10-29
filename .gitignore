@@ -30,3 +30,9 @@ pnpm-debug.log*
 .DS_Store
 *.suo
 *.sw?
+
+# playwright and next
+.next
+next-env.d.ts
+playwright-report
+test-results

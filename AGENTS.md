@@ -16,13 +16,14 @@ npm run build           # library build (ESM + CJS + types) via Vite
 npm run format          # format via Biome
 npm run check:fix       # apply Biome lint fixes, format and organize imports
 npm test                # Vitest, single run
+npm run test:e2e        # build, then Playwright (Chromium + WebKit) against test/
 npm run test:watch      # Vitest, watch mode
 npm run test:coverage   # Vitest with v8 coverage
 npx tsc --noEmit        # typecheck (no npm script)
 npx biome check .       # lint + format check without writing (no npm script)
 ```
 
-Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build` and `npm run build-storybook`.
+Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm test`. When the change touches the build or public API, also run `npm run build`, `npm run build-storybook` and `npm run test:e2e`.
 
 ## Stack
 
@@ -30,7 +31,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
 - **Build** - Vite 8 in library mode (`vite.config.ts`), `vite-plugin-dts` for types, React and `@radix-ui/*` kept external
 - **UI primitives** - Radix UI: `@radix-ui/react-popover`, `react-primitive`, `react-context`, `react-compose-refs`, `primitive`
 - **Styling** - consumer-owned Tailwind CSS v4. The library ships one zero-specificity stylesheet (`src/styles.css`, today the step motion), added to `<head>` by the build when the package loads; everything else is unstyled
-- **Testing** - Vitest + Testing Library (jsdom)
+- **Testing** - Vitest + Testing Library (jsdom) for units; Playwright (Chromium + WebKit) for end-to-end, in the `test/` workspace
 - **Stories** - Storybook 10 (`@storybook/react-vite`, a11y addon)
 - **Icons** - Lucide React (stories only, dev dependency)
 - **Linting / formatting** - Biome
@@ -46,6 +47,7 @@ Before finishing a change, run `npx tsc --noEmit`, `npx biome check .` and `npm 
   preview-head.html   # loads the story font (Schibsted Grotesk)
 src/
   index.ts            # public API; anything not exported here is internal
+  types.ts            # shared public types (TourStep, TourProps)
   tour.tsx            # every Tour part in one file, Radix-style
   hooks.ts            # useTarget (wait for the target), useRect (track its rect), useTourKeys (document keys)
   styles.css          # the library's own CSS (step motion), put in the bundle by vite-plugin-css-injected-by-js and added to <head> when the package loads, like Sonner
@@ -53,15 +55,19 @@ src/
   tour.stories.tsx    # Storybook stories
   crumb-app.tsx       # fictional bakery dashboard the stories run the tour against
   test-setup.ts       # Vitest setup (jest-dom, jsdom stubs)
+test/                 # private npm workspace (radix-tour-test): Next app + Playwright specs, never published
+  src/app/            # pages that render a tour against the built package
+  tests/tour.spec.ts  # end-to-end specs
 skills/
   radix-tour/         # Agent Skill for consumers (SKILL.md + references/); repo only, not in the npm package
 .github/workflows/
-  ci.yml              # typecheck, Biome, tests and build on pull requests and main
+  ci.yml              # typecheck, Biome, tests and build, plus a Playwright e2e job, on pull requests and main
   release.yml         # changesets/action: opens the Version Packages PR, publishes to npm
 .changeset/           # changeset config and pending changesets
 radix-tour.gif        # README demo, recorded from the Default story
 dist/                 # build output (ESM, CJS, .d.ts)
 storybook-static/     # Storybook build output
+playwright.config.ts  # e2e config; starts the test app, needs `npm run build` first
 vite.config.ts        # library build; re-adds the "use client" banner
 vitest.config.ts      # test config (jsdom, setup file, coverage)
 biome.json            # lint and format rules, including useBlockStatements

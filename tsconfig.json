@@ -11,5 +11,5 @@
     "isolatedModules": true,
     "types": ["node"]
   },
-  "include": ["src", ".storybook", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", ".storybook", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
 }
