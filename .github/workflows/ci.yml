@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -22,5 +26,50 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx biome check .
-      - run: npm test
       - run: npm run build
+
+      # The published package must hold only the library build.
+      - name: Check package contents
+        run: |
+          npm pack --dry-run --json | node -e '
+            const [pack] = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            const allowed = /^(dist\/.+|package\.json|README\.md|LICENSE\.md)$/;
+            const extra = pack.files.map((file) => file.path).filter((path) => !allowed.test(path));
+
+            if (extra.length) {
+              console.error("Unexpected files in the package:", extra);
+              process.exit(1);
+            }
+          '
+
+      - name: Check the use client banner
+        run: |
+          head -n 1 dist/index.js | grep -q '"use client"'
+          head -n 1 dist/index.cjs | grep -q '"use client"'
+
+      - run: npm run build -w website
+      - run: npx tsc --noEmit -p website
+      - run: npx tsc --noEmit -p test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+
+      # Builds the library, then runs Playwright against the test app.
+      - run: npm test
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

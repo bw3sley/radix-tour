@@ -4,10 +4,8 @@ node_modules
 # build output
 dist
 dist-ssr
-storybook-static
 
 # testing
-coverage
 
 # typescript
 *.tsbuildinfo
@@ -30,3 +28,9 @@ pnpm-debug.log*
 .DS_Store
 *.suo
 *.sw?
+
+# playwright and next
+.next
+next-env.d.ts
+playwright-report
+test-results

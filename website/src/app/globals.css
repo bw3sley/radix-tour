@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fbfaf8;
+  --foreground: #18181b;
+
+  --card: #ffffff;
+  --card-foreground: #18181b;
+
+  /* The tour card. */
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --popover-muted: #a1a1aa;
+
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f5f4f1;
+  --secondary-foreground: #18181b;
+
+  --muted: #faf9f7;
+  --muted-foreground: #6b6a66;
+  --subtle-foreground: #a3a19b;
+
+  --accent: oklch(0.56 0.18 38);
+  --accent-foreground: #ffffff;
+
+  --success: oklch(0.95 0.05 150);
+  --success-foreground: oklch(0.42 0.1 150);
+  --warning: oklch(0.95 0.05 75);
+  --warning-foreground: oklch(0.45 0.1 65);
+
+  --border: #e8e6e1;
+  --ring: #cfcdc7;
+  --radius: 0.625rem;
+
+  /* Shiki "css-variables" theme. */
+  --shiki-foreground: #24292e;
+  --shiki-background: transparent;
+  --shiki-token-constant: #005cc5;
+  --shiki-token-string: #032f62;
+  --shiki-token-comment: #6a737d;
+  --shiki-token-keyword: #d73a49;
+  --shiki-token-parameter: #24292e;
+  --shiki-token-function: #6f42c1;
+  --shiki-token-string-expression: #032f62;
+  --shiki-token-punctuation: #24292e;
+  --shiki-token-link: #032f62;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover-muted: var(--popover-muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme {
+  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@utility bg-dots {
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 1rem 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background pb-10 font-sans text-foreground antialiased;
+  }
+}
