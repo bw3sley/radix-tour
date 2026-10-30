@@ -30,13 +30,13 @@ src/
 postcss.config.mjs    # Tailwind through @tailwindcss/postcss
 ```
 
-The site is the docs: it is served at `https://tour.bw3sley.dev` and its API reference section (`id="api-reference"`) is the full API. Deploy it with a build command that builds the library first (`npm install && npm run build && npm run build -w website`) and the start command `npm run start -w website`.
+The site is the docs: it is served at `https://tour.bw3sley.dev` and its API reference section (`id="api-reference"`) is the full API. It is deployed on Coolify from the root `Dockerfile` (multi-stage: install, build the library and the site, then run only the Next standalone output as the non-root `node` user on port 3000). `next.config.ts` sets `output: "standalone"` and `outputFileTracingRoot` to the repo root so the workspace `radix-tour` package is traced into the bundle. Build the image locally with `docker build -t radix-tour-website .`.
 
 The hero demo and the "Run it on the demo" button use the real `radix-tour` library. The Placement, Spotlight and Compose previews are static mock cards driven by the same tokens.
 
 ## Conventions
 
-- One component per file, kebab-case filename, exported inline: `export function Name() {}`. No `export { Name }` at the bottom. Only `page.tsx` and `layout.tsx` use `export default`, because Next requires it.
+- One component per file, kebab-case filename, exported inline: `export function Name() {}`. No `export { Name }` at the bottom. Only `page.tsx`, `layout.tsx` and `next.config.ts` use `export default`, because Next requires it.
 - Use plain tags (`p`, `code`, `h2`, ...) directly and give each its own Tailwind classes. Do not wrap a single tag in a component, and do not style children through parent selectors such as `[&>p]:`. Name a component for what it is (`Footer`, not `SiteFooter`).
 - Non-component code goes in the role folders above. A context and its provider share one file; the `use...` hook is in `hooks/`.
 - Tailwind only. `globals.css` holds `@import "tailwindcss"`, the `:root` tokens (shadcn names: `--background`, `--foreground`, `--card`, `--popover`, `--primary`, `--secondary`, `--muted`, `--accent`, `--border`, `--radius`), the `@theme inline` mapping and a small base layer. No hand-written component CSS.

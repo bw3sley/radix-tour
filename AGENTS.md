@@ -67,6 +67,7 @@ skills/
 .changeset/           # changeset config and pending changesets
 radix-tour.gif        # README demo, recorded from the hero demo on the website
 dist/                 # build output (ESM, CJS, .d.ts)
+Dockerfile            # multi-stage image for the website (Coolify deploy); .dockerignore keeps the context small
 playwright.config.ts  # e2e config; starts the test app, needs `npm run build` first
 vite.config.ts        # library build; re-adds the "use client" banner
 biome.json            # lint and format rules, including useBlockStatements
