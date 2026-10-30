@@ -2,4 +2,4 @@
 "radix-tour": patch
 ---
 
-Center the Agent skill copy button in its code block.
+Center the copy buttons in the Installation and Agent skill code blocks.

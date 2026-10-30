@@ -4,7 +4,7 @@ import { Section } from "./section";
 export function InstallationSection() {
   return (
     <Section title="Installation">
-      <CodeBlock lang="bash" code="npm install radix-tour" />
+      <CodeBlock lang="bash" code="npm install radix-tour" centerCopy />
 
       <p className="text-base leading-relaxed text-pretty text-muted-foreground">
         <code className="font-mono text-sm text-foreground">react</code> and{" "}
