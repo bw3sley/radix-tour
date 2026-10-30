@@ -13,9 +13,9 @@ type Align = "start" | "center" | "end";
 const SIDES: Side[] = ["top", "right", "bottom", "left"];
 const ALIGNS: Align[] = ["start", "center", "end"];
 
-// Stage geometry: the target is w-30 h-8.5 top-33 (120×34 at 132); the card is 210×104.
-const TARGET = { w: 120, h: 34, top: 132 };
-const CARD = { w: 210, h: 104 };
+// Stage geometry: the target is w-30 h-8.5 top-38 (120×34 at 152); the card is 210×122.
+const TARGET = { w: 120, h: 34, top: 152 };
+const CARD = { w: 210, h: 122 };
 const GAP = 12;
 
 export function Placement() {
@@ -81,21 +81,24 @@ export function Placement() {
       </div>
 
       <div className="overflow-x-auto rounded-xl">
-        <div className="relative h-75 min-w-150 overflow-hidden rounded-xl border bg-card bg-dots">
-          <div className="absolute top-33 left-1/2 flex h-8.5 w-30 -translate-x-1/2 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground">
+        <div className="relative h-85 min-w-150 overflow-hidden rounded-xl border bg-card bg-dots">
+          <div className="absolute top-38 left-1/2 flex h-8.5 w-30 -translate-x-1/2 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground">
             <Plus size={15} strokeWidth={2} aria-hidden />
             New order
           </div>
+
+          <PreviewArrow
+            top={`calc(${top} + ${arrowTop}px)`}
+            left={`calc(${left} + ${arrowLeft}px)`}
+          />
 
           <div
             className="absolute rounded-2xl bg-popover px-3.5 py-3 text-left text-popover-foreground shadow-xl transition-all duration-400 ease-snappy"
             style={{ width: CARD.w, height: CARD.h, top, left }}
           >
-            <PreviewArrow top={arrowTop} left={arrowLeft} />
-
             <div className="relative text-sm leading-5 font-semibold">Add an order</div>
             <div className="relative mt-0.5 text-sm leading-5 text-popover-muted">
-              Standing orders repeat weekly.
+              Standing orders repeat every week.
             </div>
 
             <div className="relative mt-2.5 flex items-center justify-between">
