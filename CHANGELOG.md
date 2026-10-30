@@ -1,5 +1,12 @@
 # radix-tour
 
+## 1.0.1
+
+### Patch Changes
+
+- 5472ab9: Center the copy buttons in the Installation and Agent skill code blocks.
+- 178a3b2: Add Takumi-rendered social previews, metadata, and a favicon to the documentation site.
+
 ## 1.0.0
 
 ### Major Changes
