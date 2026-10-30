@@ -9,9 +9,10 @@ interface CodeBlockProps {
   code: string;
   lang?: "tsx" | "bash";
   small?: boolean;
+  centerCopy?: boolean;
 }
 
-export function CodeBlock({ code, lang = "tsx", small }: CodeBlockProps) {
+export function CodeBlock({ code, lang = "tsx", small, centerCopy }: CodeBlockProps) {
   const [html, setHtml] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -53,7 +54,7 @@ export function CodeBlock({ code, lang = "tsx", small }: CodeBlockProps) {
 
       <button
         type="button"
-        className="absolute top-2 right-2 grid size-7 cursor-pointer place-items-center rounded-md border bg-card text-muted-foreground hover:text-foreground"
+        className={`absolute right-2 grid size-7 cursor-pointer place-items-center rounded-md border bg-card text-muted-foreground hover:text-foreground ${centerCopy ? "top-1/2 -translate-y-1/2" : "top-2"}`}
         aria-label="Copy"
         onClick={copy}
       >
