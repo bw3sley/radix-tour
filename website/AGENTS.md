@@ -32,7 +32,7 @@ postcss.config.mjs    # Tailwind through @tailwindcss/postcss
 
 The site is the docs: it is served at `https://tour.bw3sley.dev` and its API reference section (`id="api-reference"`) is the full API. It is deployed on Coolify from the root `Dockerfile` (multi-stage: install, build the library and the site, then run only the Next standalone output as the non-root `node` user on port 3000). `next.config.ts` sets `output: "standalone"` and `outputFileTracingRoot` to the repo root so the workspace `radix-tour` package is traced into the bundle. Build the image locally with `docker build -t radix-tour-website .`.
 
-The hero demo and the "Run it on the demo" button use the real `radix-tour` library. The Placement, Spotlight and Compose previews are static mock cards driven by the same tokens.
+The hero demo and the "Run it on the demo" button use the real `radix-tour` library. The Placement, Spotlight and Compose previews are static mock cards driven by the same tokens. Social images use a shared `OgImage` component rendered by `takumi-js`; `next.config.ts` leaves the native `@takumi-rs/core` binding external to the bundle.
 
 ## Conventions
 
