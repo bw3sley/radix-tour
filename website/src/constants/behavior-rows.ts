@@ -6,7 +6,7 @@ export interface BehaviorRow {
 
 export const BEHAVIOR_ROWS: BehaviorRow[] = [
   { keys: ["Esc"], text: "Closes the tour" },
-  { keys: ["←", "→"], text: "Moves between steps while focus is in the card" },
+  { keys: ["←", "→"], text: "Moves between steps from anywhere on the page" },
   { keys: [], label: "focus", text: "Returns to whatever opened the tour" },
   {
     keys: [],

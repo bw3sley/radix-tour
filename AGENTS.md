@@ -70,7 +70,7 @@ dist/                 # build output (ESM, CJS, .d.ts)
 playwright.config.ts  # e2e config; starts the test app, needs `npm run build` first
 vite.config.ts        # library build; re-adds the "use client" banner
 biome.json            # lint and format rules, including useBlockStatements
-README.md             # public docs: install, quick start, API reference, roadmap
+README.md             # short npm/GitHub page: demo, install, minimal example, link to the docs site
 LICENSE.md            # MIT
 CLAUDE.md             # points agents back to this file
 ```
@@ -123,7 +123,7 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 - Keep `src/` flat: the parts in `src/tour.tsx`, shared hooks in `src/hooks.ts`. Add a file, not a folder, when something new needs its own module.
 - Build only what a test or the website demo renders today. Do not add speculative parts or options.
 - New behavior needs a Playwright spec in `test/tests/`. A change to what users see also updates the website demo.
-- A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference in `README.md`.
+- A change to the public API (parts, props, step fields, `data-*` attributes) also updates the API reference on the website (`website/src/constants/api-reference.ts`) and the skill in `skills/radix-tour/`.
 - A user-facing change also needs a changeset: run `npx changeset`, pick the bump (`minor` for breaking changes while below 1.0), and commit the generated `.changeset/*.md`. Do not run `npm run version` or `npm run release` by hand: the Release workflow (`.github/workflows/release.yml`) opens a "Version Packages" PR on `main`, and merging it publishes to npm. `prepublishOnly` runs typecheck, Biome and the build first; CI runs the Playwright suite on every pull request and on `main`.
 - Use named exports only. No default exports, except Next's `page.tsx` and `layout.tsx`.
 - Keep `"."` first in `workspaces` in `package.json`. Without it changesets does not see `radix-tour` as a package, and `changeset version` fails with "not in the workspace". - Keep `test/` and `website/` private and listed in `ignore` in `.changeset/config.json`. After changing the package, run `npm pack --dry-run` and check it lists only `dist/`, `README.md`, `LICENSE.md` and `package.json`.
@@ -142,5 +142,5 @@ Bundlers drop module-level directives, so `vite.config.ts` re-adds `"use client"
 ## Documentation Rules
 
 - Keep this file updated when stack, scripts, or folder structure changes.
-- Keep `README.md` accurate: document only behavior that exists, and list planned work under its Roadmap section.
+- Keep `README.md` short, like Sonner's: demo, tagline, install, a minimal example and a link to the docs site (`https://tour.bw3sley.dev`). The full docs live on the website; document only behavior that exists.
 - Keep `CLAUDE.md` as a pointer file only.

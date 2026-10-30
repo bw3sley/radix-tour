@@ -23,12 +23,14 @@ src/
     page.tsx          # the landing page, composed from section components
     globals.css       # Tailwind import and design tokens only
   components/         # one component per file
-  constants/          # step data, demo orders, spotlight presets, code strings
+  constants/          # step data, demo orders, spotlight presets, code strings, the API reference rows
   contexts/           # playground-context.tsx: context and provider in one file
   hooks/              # use-playground.ts
   lib/                # shiki-theme.ts
 postcss.config.mjs    # Tailwind through @tailwindcss/postcss
 ```
+
+The site is the docs: it is served at `https://tour.bw3sley.dev` and its API reference section (`id="api-reference"`) is the full API. Deploy it with a build command that builds the library first (`npm install && npm run build && npm run build -w website`) and the start command `npm run start -w website`.
 
 The hero demo and the "Run it on the demo" button use the real `radix-tour` library. The Placement, Spotlight and Compose previews are static mock cards driven by the same tokens.
 

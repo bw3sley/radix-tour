@@ -5,7 +5,8 @@ export function BehaviorSection() {
   return (
     <Section title="Behavior">
       <p className="text-base leading-relaxed text-pretty text-muted-foreground">
-        Accessible by default. The card is a Radix Popover, exposed as a dialog.
+        Accessible by default: keyboard navigation, focus management and screen-reader announcements
+        are built in. The card is a Radix Popover, exposed as a dialog.
       </p>
 
       <div className="flex flex-col rounded-lg border bg-card">

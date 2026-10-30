@@ -1,4 +1,5 @@
 import { AgentSkillSection } from "../components/agent-skill-section";
+import { ApiSection } from "../components/api-section";
 import { BehaviorSection } from "../components/behavior-section";
 import { ComposeSection } from "../components/compose-section";
 import { Footer } from "../components/footer";
@@ -29,6 +30,7 @@ export default function Page() {
         <Placement />
         <SpotlightSection />
         <ComposeSection />
+        <ApiSection />
         <BehaviorSection />
         <AgentSkillSection />
         <Footer />

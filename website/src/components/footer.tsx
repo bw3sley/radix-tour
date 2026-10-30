@@ -13,12 +13,7 @@ export function Footer() {
       </span>
 
       <div className="flex gap-4">
-        <a
-          className={LINK}
-          href="https://github.com/bw3sley/radix-tour#api-reference"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className={LINK} href="#api-reference">
           API reference
         </a>
         <a
