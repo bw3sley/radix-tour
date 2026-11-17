@@ -17,7 +17,7 @@
     "react-dom": "^19.3.0",
     "shiki": "^4.6.0",
     "tailwindcss": "^4.3.3",
-    "takumi-js": "2.19.0"
+    "takumi-js": "2.20.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
